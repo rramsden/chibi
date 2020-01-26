@@ -11,10 +11,10 @@ struct Element {
 }
 
 #[derive(Debug)]
-struct ElementTree {
+struct Node {
     is_list: bool,
     element: Option<Element>,
-    list: Vec<ElementTree>
+    list: Vec<Node>
 }
 
 use std::io::{self, Write, BufRead};
@@ -39,31 +39,31 @@ fn tokenize(expression: String) -> Vec<String> {
     expression.split_whitespace().map(|s| s.to_string()).collect()
 }
 
-fn parenthesize(mut input: Vec<String>, mut value_or_list: ElementTree) -> ElementTree {
+fn parenthesize(mut input: Vec<String>, mut node: Node) -> Node {
     if input.len() == 0 {
-        return value_or_list
+        return node
     }
 
     let token = input.remove(0);
     
     if token == "(" {
-        let node = ElementTree {
+        let new_node = Node {
             is_list: true,
             element: None,
             list: Vec::new()
         };
 
-        value_or_list.list.push(parenthesize(input.clone(), node));
-        return value_or_list;
+        node.list.push(parenthesize(input.clone(), new_node));
+        return node;
     } else if token == ")" {
-        return value_or_list;
+        return node;
     } else {
-        value_or_list.list.push(categorize(token));
-        return parenthesize(input.clone(), value_or_list);
+        node.list.push(categorize(token));
+        return parenthesize(input.clone(), node);
     }
 }
 
-fn categorize(token: String) -> ElementTree {
+fn categorize(token: String) -> Node {
     let first_ch = token.chars().next().unwrap();
     let last_ch = token.chars().last().unwrap();
 
@@ -76,22 +76,22 @@ fn categorize(token: String) -> ElementTree {
         kind = ElementKind::IDENTIFIER;
     };
 
-    return ElementTree {
+    return Node {
         is_list: false,
         element: Some(Element { value: token, kind: kind }),
         list: Vec::new()
     }
 }
 
-fn parse(expression: String) -> ElementTree {
+fn parse(expression: String) -> Node {
     let tokens = tokenize(expression);
-    let value_or_list = ElementTree {
+    let node = Node {
         is_list: true,
         element: None,
         list: Vec::new()
     };
 
-    return parenthesize(tokens, value_or_list);
+    return parenthesize(tokens, node);
 }
 
 fn read() -> String {
