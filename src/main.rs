@@ -1,5 +1,3 @@
-use std::fmt;
-
 #[derive(Debug)]
 enum ElementKind {
     IDENTIFIER,
