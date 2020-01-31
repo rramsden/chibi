@@ -11,10 +11,9 @@ struct Element {
 }
 
 #[derive(Debug)]
-struct Node {
-    is_list: bool,
-    element: Option<Element>,
-    list: Vec<Node>
+enum AST {
+    Element(Element),
+    List(Vec<AST>)
 }
 
 use std::io::{self, Write, BufRead};
@@ -29,6 +28,9 @@ fn main() {
     }
 }
 
+/// Take an input string and split on whitespace
+///
+/// Given (+ 1 1) it returns vec!['(', '+', '1', '1', ')']
 fn tokenize(expression: String) -> Vec<String> {
     let expression = expression 
         .replace("(", " ( ")
@@ -39,7 +41,8 @@ fn tokenize(expression: String) -> Vec<String> {
     expression.split_whitespace().map(|s| s.to_string()).collect()
 }
 
-fn parenthesize(mut input: Vec<String>, mut node: Node) -> Node {
+/// Builds an abstract syntax tree from tokenized input and returns an AST
+fn parenthesize(mut input: Vec<String>, node: AST) -> AST {
     if input.len() == 0 {
         return node
     }
@@ -47,23 +50,27 @@ fn parenthesize(mut input: Vec<String>, mut node: Node) -> Node {
     let token = input.remove(0);
     
     if token == "(" {
-        let new_node = Node {
-            is_list: true,
-            element: None,
-            list: Vec::new()
-        };
+        let new_node = AST::List(Vec::new());
 
-        node.list.push(parenthesize(input.clone(), new_node));
-        return node;
+        if let AST::List(mut list) = node {
+            list.push(parenthesize(input.clone(), new_node));
+            return AST::List(list);
+        } else {
+            return node;
+        }
     } else if token == ")" {
         return node;
     } else {
-        node.list.push(categorize(token));
-        return parenthesize(input.clone(), node);
+        if let AST::List(mut list) = node {
+            list.push(categorize(token));
+            return parenthesize(input.clone(), AST::List(list));
+        } else {
+            return node;
+        }
     }
 }
 
-fn categorize(token: String) -> Node {
+fn categorize(token: String) -> AST {
     let first_ch = token.chars().next().unwrap();
     let last_ch = token.chars().last().unwrap();
 
@@ -76,21 +83,12 @@ fn categorize(token: String) -> Node {
         kind = ElementKind::IDENTIFIER;
     };
 
-    return Node {
-        is_list: false,
-        element: Some(Element { value: token, kind: kind }),
-        list: Vec::new()
-    }
+    return AST::Element(Element { value: token, kind: kind });
 }
 
-fn parse(expression: String) -> Node {
+fn parse(expression: String) -> AST {
     let tokens = tokenize(expression);
-    let node = Node {
-        is_list: true,
-        element: None,
-        list: Vec::new()
-    };
-
+    let node = AST::List(Vec::new());
     return parenthesize(tokens, node);
 }
 
