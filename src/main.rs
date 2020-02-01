@@ -1,15 +1,16 @@
-mod stdlib;
+mod env;
 mod types;
 
 use types::*;
+use env::Environment;
 use std::io::{self, Write, BufRead};
 
 fn main() {
     loop {
         print!("> ");
         let expression = read();
-        let context = Context { scope: vec![] };
-        let result = interpret(parse(expression), context);
+        let env = env::standard_env();
+        let result = interpret(parse(expression), env);
 
         println!("{:?}", result);
     }
@@ -28,21 +29,21 @@ fn tokenize(expression: String) -> Vec<String> {
     expression.split_whitespace().map(|s| s.to_string()).collect()
 }
 
-fn interpret(input: SyntaxTree, context: Context) -> Primitive {
+fn interpret(input: SyntaxTree, env: Environment) -> Primitive {
     match input {
-        SyntaxTree::List(tree) => interpret_list(tree, context),
+        SyntaxTree::List(tree) => interpret_list(tree, env),
         SyntaxTree::Element(primitive) => primitive
     }
 }
 
-fn interpret_list(vec: Vec<SyntaxTree>, context: Context) -> Primitive {
+fn interpret_list(vec: Vec<SyntaxTree>, env: Environment) -> Primitive {
     if vec.len() > 0 {
-        let slice: Vec<Primitive> = vec.into_iter().map(|tree| interpret(tree, context.clone())).collect();
+        let slice: Vec<Primitive> = vec.into_iter().map(|tree| interpret(tree, env.clone())).collect();
 
         if let Primitive::Identifier(id) = slice.first().unwrap() {
-            match stdlib::lookup(&id) {
-                Some(lambda) => return lambda(slice[1..].to_vec(), context),
-                None => return Primitive::Tuple(slice)
+            match env.scope.get(id) {
+                Some(Primitive::Lambda(lambda)) => return lambda(slice[1..].to_vec(), env),
+                _ => return Primitive::Tuple(slice)
             }
         } else {
             if slice.len() == 1 {

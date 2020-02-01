@@ -1,15 +1,21 @@
 use super::types::*;
+use std::collections::HashMap;
 
-pub fn lookup(symbol: &str) -> Option<fn(Vec<Primitive>, Context) -> Primitive> {
-    match symbol {
-        "+" => Some(addition),
-        "-" => Some(subtract),
-        "*" => Some(multiply),
-        _ => None
-    }
+#[derive(Debug, Clone)]
+pub struct Environment {
+    pub scope: HashMap<String, Primitive>
 }
 
-fn addition(list: Vec<Primitive>, _context: Context) -> Primitive {
+pub fn standard_env() -> Environment {
+    let mut dict: HashMap<String, Primitive> = HashMap::new();
+    dict.insert("+".to_string(), Primitive::Lambda(addition));
+    dict.insert("-".to_string(), Primitive::Lambda(subtract));
+    dict.insert("*".to_string(), Primitive::Lambda(multiply));
+
+    Environment { scope: dict }
+}
+
+fn addition(list: Vec<Primitive>, env: Environment) -> Primitive {
     let mut has_float = false;
     let result = list.iter().fold(0f64, |acc, x|
               match x {
@@ -27,7 +33,7 @@ fn addition(list: Vec<Primitive>, _context: Context) -> Primitive {
     }
 }
 
-fn subtract(list: Vec<Primitive>, _context: Context) -> Primitive {
+fn subtract(list: Vec<Primitive>, env: Environment) -> Primitive {
     let mut has_float = false;
     let result = list.iter().fold(0f64, |acc, x|
               match x {
@@ -45,7 +51,7 @@ fn subtract(list: Vec<Primitive>, _context: Context) -> Primitive {
     }
 }
 
-fn multiply(list: Vec<Primitive>, _context: Context) -> Primitive {
+fn multiply(list: Vec<Primitive>, env: Environment) -> Primitive {
     let mut has_float = false;
     let result = list.iter().fold(1f64, |acc, x|
               match x {
