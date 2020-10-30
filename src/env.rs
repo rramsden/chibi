@@ -3,19 +3,35 @@ use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub struct Environment {
-    pub scope: HashMap<String, Primitive>
+    pub stdlib: HashMap<String, Primitive>,
+    pub definitions: HashMap<String, Primitive>
 }
 
 pub fn standard_env() -> Environment {
-    let mut dict: HashMap<String, Primitive> = HashMap::new();
-    dict.insert("+".to_string(), Primitive::Lambda(addition));
-    dict.insert("-".to_string(), Primitive::Lambda(subtract));
-    dict.insert("*".to_string(), Primitive::Lambda(multiply));
+    let mut stdlib: HashMap<String, Primitive> = HashMap::new();
+    stdlib.insert("+".to_string(), Primitive::Lambda(addition));
+    stdlib.insert("-".to_string(), Primitive::Lambda(subtract));
+    stdlib.insert("*".to_string(), Primitive::Lambda(multiply));
+    stdlib.insert("define".to_string(), Primitive::Lambda(define));
 
-    Environment { scope: dict }
+    let definitions: HashMap<String, Primitive> = HashMap::new();
+
+    Environment { stdlib: stdlib, definitions: definitions }
 }
 
-fn addition(list: Vec<Primitive>, env: Environment) -> Primitive {
+fn define(list: Vec<Primitive>, env: &mut Environment) -> Primitive {
+    println!("list: {:?}", list);
+    let first = list.first().unwrap();
+
+    if let Primitive::Identifier(id) = first {
+        env.definitions.insert(id.to_string(), list[1].clone());
+        return first.clone();
+    } else {
+        panic!("define needs type Identifier, received {:?}", first);
+    }
+}
+
+fn addition(list: Vec<Primitive>, env: &mut Environment) -> Primitive {
     let mut has_float = false;
     let result = list.iter().fold(0f64, |acc, x|
               match x {
@@ -33,7 +49,7 @@ fn addition(list: Vec<Primitive>, env: Environment) -> Primitive {
     }
 }
 
-fn subtract(list: Vec<Primitive>, env: Environment) -> Primitive {
+fn subtract(list: Vec<Primitive>, env: &mut Environment) -> Primitive {
     let mut has_float = false;
     let result = list.iter().fold(0f64, |acc, x|
               match x {
@@ -51,7 +67,7 @@ fn subtract(list: Vec<Primitive>, env: Environment) -> Primitive {
     }
 }
 
-fn multiply(list: Vec<Primitive>, env: Environment) -> Primitive {
+fn multiply(list: Vec<Primitive>, env: &mut Environment) -> Primitive {
     let mut has_float = false;
     let result = list.iter().fold(1f64, |acc, x|
               match x {

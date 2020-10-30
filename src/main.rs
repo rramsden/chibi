@@ -6,11 +6,13 @@ use env::Environment;
 use std::io::{self, Write, BufRead};
 
 fn main() {
+    // global lisp environment
+    let mut env = env::standard_env();
+
     loop {
         print!("> ");
         let expression = read();
-        let env = env::standard_env();
-        let result = interpret(parse(expression), env);
+        let result = interpret(parse(expression), &mut env);
 
         println!("{:?}", result);
     }
@@ -29,19 +31,29 @@ fn tokenize(expression: String) -> Vec<String> {
     expression.split_whitespace().map(|s| s.to_string()).collect()
 }
 
-fn interpret(input: SyntaxTree, env: Environment) -> Primitive {
+fn interpret(input: SyntaxTree, env: &mut Environment) -> Primitive {
     match input {
         SyntaxTree::List(tree) => interpret_list(tree, env),
-        SyntaxTree::Element(primitive) => primitive
+        SyntaxTree::Element(primitive) => {
+            match primitive {
+                Primitive::Identifier(id) => {
+                    match env.definitions.get(&id) {
+                        Some(value) => return value.clone(),
+                        _ => return Primitive::Identifier(id)
+                    }
+                }
+                _ => primitive
+            }
+        }
     }
 }
 
-fn interpret_list(vec: Vec<SyntaxTree>, env: Environment) -> Primitive {
+fn interpret_list(vec: Vec<SyntaxTree>, env: &mut Environment) -> Primitive {
     if vec.len() > 0 {
-        let slice: Vec<Primitive> = vec.into_iter().map(|tree| interpret(tree, env.clone())).collect();
+        let slice: Vec<Primitive> = vec.into_iter().map(|tree| interpret(tree, env)).collect();
 
         if let Primitive::Identifier(id) = slice.first().unwrap() {
-            match env.scope.get(id) {
+            match env.stdlib.get(id) {
                 Some(Primitive::Lambda(lambda)) => return lambda(slice[1..].to_vec(), env),
                 _ => return Primitive::Tuple(slice)
             }
@@ -58,18 +70,18 @@ fn interpret_list(vec: Vec<SyntaxTree>, env: Environment) -> Primitive {
 }
 
 /// Builds an abstract syntax tree from tokenized input and returns an SyntaxTree
-fn parenthesize(mut input: Vec<String>, node: SyntaxTree) -> SyntaxTree {
+fn build_ast(mut input: Vec<String>, node: SyntaxTree) -> SyntaxTree {
     if input.len() == 0 {
         return node
     }
 
     let token = input.remove(0);
-    
+   
     if token == "(" {
         let new_node = SyntaxTree::List(Vec::new());
 
         if let SyntaxTree::List(mut list) = node {
-            list.push(parenthesize(input.clone(), new_node));
+            list.push(build_ast(input.clone(), new_node));
             return SyntaxTree::List(list);
         } else {
             return node;
@@ -79,7 +91,7 @@ fn parenthesize(mut input: Vec<String>, node: SyntaxTree) -> SyntaxTree {
     } else {
         if let SyntaxTree::List(mut list) = node {
             list.push(categorize(token));
-            return parenthesize(input.clone(), SyntaxTree::List(list));
+            return build_ast(input.clone(), SyntaxTree::List(list));
         } else {
             return node;
         }
@@ -110,7 +122,9 @@ fn categorize(token: String) -> SyntaxTree {
 fn parse(expression: String) -> SyntaxTree {
     let tokens = tokenize(expression);
     let node = SyntaxTree::List(Vec::new());
-    return parenthesize(tokens, node);
+    let ast = build_ast(tokens, node);
+    println!("\n{:?}\n", ast);
+    return ast;
 }
 
 fn read() -> String {
