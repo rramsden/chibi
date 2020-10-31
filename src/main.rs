@@ -41,19 +41,15 @@ fn interpret(input: SyntaxTree, env: &mut Environment) -> Primitive {
                     let body = list[2].clone();
 
                     if let SyntaxTree::Element(Primitive::Identifier(id)) = arguments {
-                        return define_constant(id, body, env);
-                    }
-
-                    if let SyntaxTree::List(signature) = arguments {
+                        let result = interpret(body, env);
+                        return define_constant(id, result, env);
+                    } else if let SyntaxTree::List(signature) = arguments {
                         return define_function(signature, body, env);
                     }
-                }
-
-                if let Some((signature, body)) = env.functions.get(leftmost) {
-                    let mut params: Vec<SyntaxTree> = vec![];
-                    for (i, _) in list[1..].into_iter().enumerate() {
-                        let new_vec = list[i + 1].clone();
-                        params.push(new_vec);
+                } else if let Some((signature, body)) = env.clone().functions.get(leftmost) {
+                    let mut params: Vec<Primitive> = vec![];
+                    for param in list[1..].into_iter() {
+                        params.push( interpret(param.clone(), env).clone() )
                     }
 
                     return apply(signature.to_vec(), params, body.clone(), env);
@@ -66,7 +62,7 @@ fn interpret(input: SyntaxTree, env: &mut Environment) -> Primitive {
             match primitive {
                 Primitive::Identifier(id) => {
                     match env.variables.get(&id) {
-                        Some(SyntaxTree::Element(primitive)) => return primitive.clone(),
+                        Some(primitive) => return primitive.clone(),
                         _ => return Primitive::Identifier(id)
                     }
                 }
@@ -97,8 +93,8 @@ fn interpret_list(vec: Vec<SyntaxTree>, env: &mut Environment) -> Primitive { //
     }
 }
 
-fn define_constant(label: String, body: SyntaxTree, env: &mut Environment) -> Primitive {
-    env.variables.insert(label.clone(), body);
+fn define_constant(label: String, value: Primitive, env: &mut Environment) -> Primitive {
+    env.variables.insert(label.clone(), value);
     return Primitive::Identifier(label);
 }
 
@@ -115,10 +111,10 @@ fn define_function(signature: Vec<SyntaxTree>, body: SyntaxTree, env: &mut Envir
     }
 }
 
-fn apply(signature: Vec<SyntaxTree>, params: Vec<SyntaxTree>, body: SyntaxTree, env: &mut Environment) -> Primitive {
+fn apply(signature: Vec<SyntaxTree>, values: Vec<Primitive>, body: SyntaxTree, env: &mut Environment) -> Primitive {
     for (i, id) in signature.into_iter().enumerate() {
-        if let SyntaxTree::Element(Primitive::Identifier(label)) = id {
-            env.variables.insert(label, params[i].clone());
+        if let SyntaxTree::Element(Primitive::Identifier(varname)) = id {
+            env.variables.insert(varname, values[i].clone());
         }
     }
 

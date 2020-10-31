@@ -4,7 +4,7 @@ use std::collections::HashMap;
 #[derive(Debug, Clone)]
 pub struct Environment {
     pub stdlib: HashMap<String, Primitive>,
-    pub variables: HashMap<String, SyntaxTree>,
+    pub variables: HashMap<String, Primitive>,
 
     // label, (signature, body)
     pub functions: HashMap<String, (Vec<SyntaxTree>, SyntaxTree)>
@@ -16,7 +16,7 @@ pub fn standard_env() -> Environment {
     stdlib.insert("-".to_string(), Primitive::Lambda(subtract));
     stdlib.insert("*".to_string(), Primitive::Lambda(multiply));
 
-    let variables: HashMap<String, SyntaxTree> = HashMap::new();
+    let variables: HashMap<String, Primitive> = HashMap::new();
     let functions: HashMap<String, (Vec<SyntaxTree>, SyntaxTree)> = HashMap::new();
 
     Environment { stdlib, variables, functions }
