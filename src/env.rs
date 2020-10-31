@@ -4,7 +4,10 @@ use std::collections::HashMap;
 #[derive(Debug, Clone)]
 pub struct Environment {
     pub stdlib: HashMap<String, Primitive>,
-    pub definitions: HashMap<String, Primitive>
+    pub variables: HashMap<String, SyntaxTree>,
+
+    // label, (signature, body)
+    pub functions: HashMap<String, (Vec<SyntaxTree>, SyntaxTree)>
 }
 
 pub fn standard_env() -> Environment {
@@ -12,23 +15,11 @@ pub fn standard_env() -> Environment {
     stdlib.insert("+".to_string(), Primitive::Lambda(addition));
     stdlib.insert("-".to_string(), Primitive::Lambda(subtract));
     stdlib.insert("*".to_string(), Primitive::Lambda(multiply));
-    stdlib.insert("define".to_string(), Primitive::Lambda(define));
 
-    let definitions: HashMap<String, Primitive> = HashMap::new();
+    let variables: HashMap<String, SyntaxTree> = HashMap::new();
+    let functions: HashMap<String, (Vec<SyntaxTree>, SyntaxTree)> = HashMap::new();
 
-    Environment { stdlib: stdlib, definitions: definitions }
-}
-
-fn define(list: Vec<Primitive>, env: &mut Environment) -> Primitive {
-    println!("list: {:?}", list);
-    let first = list.first().unwrap();
-
-    if let Primitive::Identifier(id) = first {
-        env.definitions.insert(id.to_string(), list[1].clone());
-        return first.clone();
-    } else {
-        panic!("define needs type Identifier, received {:?}", first);
-    }
+    Environment { stdlib, variables, functions }
 }
 
 fn addition(list: Vec<Primitive>, _: &mut Environment) -> Primitive {
