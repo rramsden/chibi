@@ -57,15 +57,11 @@ fn format_tree(tree: &SyntaxTree, indent: i32, last: bool) -> String {
             }
         },
         SyntaxTree::List(vec) => {
-            let mut i = 0;
-            let len = vec.len();
-
             for _ in 0..indent {
                 output.push_str("  ");
             }
-            for ast in vec.iter() {
-                i += 1;
-                output.push_str(&format_tree(ast, indent + 1, i == len))
+            for (pos, ast) in vec.iter().enumerate() {
+                output.push_str(&format_tree(ast, indent + 1, pos == vec.len() - 1))
             }
 
             format!("List [\n  {}]", output)
