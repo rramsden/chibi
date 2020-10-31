@@ -45,23 +45,21 @@ pub enum SyntaxTree {
 }
 
 
-fn format_tree(tree: &SyntaxTree, indent: i32, last: bool) -> String {
+fn format_tree(tree: &SyntaxTree, indent: i32) -> String {
     let mut output = String::from("");
 
     match tree {
-        SyntaxTree::Element(e) => {
-            if last {
-                format!("{:?}", e)
-            } else {
-                format!("{:?}, ", e)
-            }
-        },
+        SyntaxTree::Element(e) => { format!("{:?}", e) },
         SyntaxTree::List(vec) => {
-            for _ in 0..indent {
-                output.push_str("  ");
-            }
+            for _ in 0..indent { output.push_str("  "); }
+
             for (pos, ast) in vec.iter().enumerate() {
-                output.push_str(&format_tree(ast, indent + 1, pos == vec.len() - 1))
+                output.push_str(&format_tree(ast, indent + 1));
+
+                let end_of_array = pos == vec.len() - 1;
+                if !end_of_array {
+                    output.push_str(", ");
+                }
             }
 
             format!("List [\n  {}]", output)
@@ -72,6 +70,6 @@ fn format_tree(tree: &SyntaxTree, indent: i32, last: bool) -> String {
 
 impl fmt::Debug for SyntaxTree {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", format_tree(self, 0, false))
+        write!(f, "{}", format_tree(self, 0))
     }
 }
