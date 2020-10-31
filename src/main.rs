@@ -48,6 +48,16 @@ fn interpret(input: SyntaxTree, env: &mut Environment) -> Primitive {
                         return define_function(signature, body, env);
                     }
                 }
+
+                if let Some((signature, body)) = env.functions.get(leftmost) {
+                    let mut params: Vec<SyntaxTree> = vec![];
+                    for (i, _) in list[1..].into_iter().enumerate() {
+                        let new_vec = list[i + 1].clone();
+                        params.push(new_vec);
+                    }
+
+                    return apply(signature.to_vec(), params, body.clone(), env);
+                }
             }
 
             return interpret_list(list, env)
@@ -66,26 +76,8 @@ fn interpret(input: SyntaxTree, env: &mut Environment) -> Primitive {
     }
 }
 
-fn interpret_list(mut vec: Vec<SyntaxTree>, env: &mut Environment) -> Primitive { // Defining functions
+fn interpret_list(vec: Vec<SyntaxTree>, env: &mut Environment) -> Primitive { // Defining functions
     if vec.len() > 0 {
-        let first = &vec[0];
-
-        // check for symbols
-        if let SyntaxTree::Element(Primitive::Identifier(id)) = first {
-            match env.functions.get(id) {
-                Some((signature, body)) => {
-                    let mut params: Vec<SyntaxTree> = vec![];
-                    for (i, _) in vec[1..].into_iter().enumerate() {
-                        let new_vec = vec[i + 1].clone();
-                        params.push(new_vec);
-                    }
-
-                    vec = vec![SyntaxTree::Element(apply(signature.to_vec(), params, body.clone(), env))];
-                },
-                _ => {}
-            }
-        }
-
         let slice: Vec<Primitive> = vec.into_iter().map(|tree| interpret(tree, env)).collect();
 
         if let Primitive::Identifier(id) = slice.first().unwrap() {
