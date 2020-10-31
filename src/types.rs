@@ -2,6 +2,12 @@ use std::fmt;
 use super::env::Environment;
 
 #[derive(Clone)]
+pub enum SyntaxTree {
+    Element(Primitive),
+    List(Vec<SyntaxTree>)
+}
+
+#[derive(Clone)]
 pub enum Primitive {
     Identifier(String),
     String(String),
@@ -38,12 +44,11 @@ impl fmt::Debug for Primitive {
 
 type Lambda = fn(Vec<Primitive>, &mut Environment) -> Primitive;
 
-#[derive(Clone)]
-pub enum SyntaxTree {
-    Element(Primitive),
-    List(Vec<SyntaxTree>)
+impl fmt::Debug for SyntaxTree {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", format_tree(self, 0))
+    }
 }
-
 
 fn format_tree(tree: &SyntaxTree, indent: i32) -> String {
     let mut output = String::from("");
@@ -65,11 +70,5 @@ fn format_tree(tree: &SyntaxTree, indent: i32) -> String {
             format!("List [\n  {}]", output)
         }
 
-    }
-}
-
-impl fmt::Debug for SyntaxTree {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", format_tree(self, 0))
     }
 }
