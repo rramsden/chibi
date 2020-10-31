@@ -31,9 +31,27 @@ fn tokenize(expression: String) -> Vec<String> {
     expression.split_whitespace().map(|s| s.to_string()).collect()
 }
 
+
 fn interpret(input: SyntaxTree, env: &mut Environment) -> Primitive {
     match input {
-        SyntaxTree::List(list) => interpret_list(list, env),
+        SyntaxTree::List(list) => {
+            if let SyntaxTree::Element(Primitive::Identifier(leftmost)) = &list[0] {
+                if leftmost == "define" && list.len() == 3 {
+                    let arguments = list[1].clone();
+                    let body = list[2].clone();
+
+                    if let SyntaxTree::Element(Primitive::Identifier(id)) = arguments {
+                        return define_constant(id, body, env);
+                    }
+
+                    if let SyntaxTree::List(signature) = arguments {
+                        return define_function(signature, body, env);
+                    }
+                }
+            }
+
+            return interpret_list(list, env)
+        },
         SyntaxTree::Element(primitive) => {
             match primitive {
                 Primitive::Identifier(id) => {
@@ -49,51 +67,10 @@ fn interpret(input: SyntaxTree, env: &mut Environment) -> Primitive {
 }
 
 fn interpret_list(mut vec: Vec<SyntaxTree>, env: &mut Environment) -> Primitive { // Defining functions
-    if vec.len() == 3 {
-        let define = vec[0].clone();
-        let label = vec[1].clone();
-        let body = vec[2].clone();
-
-        // Define statements can have two bodies
-        //
-        // 1. (define x body)
-        // 2. (define (sum-of-squares x y) body)
-        //
-        match define {
-            SyntaxTree::Element(Primitive::Identifier(ref v)) if v == "define" => {
-                match label {
-                    SyntaxTree::List(vec) => {
-                        let slice = &vec[..];
-                        let label = &slice[0];
-                        let arguments: Vec<SyntaxTree> = slice[1..].into();
-
-                        if let SyntaxTree::Element(Primitive::Identifier(id)) = label {
-                            env.functions.insert(id.clone(), (arguments, body));
-                            return Primitive::Identifier(id.clone());
-                        } else {
-                            panic!("expected unknown type");
-                        }
-                    },
-                    SyntaxTree::Element(Primitive::Identifier(id)) => {
-                        if let SyntaxTree::Element(primitive) = body {
-                            env.variables.insert(id.clone(), SyntaxTree::Element(primitive));
-                            return Primitive::Identifier(id);
-                        } else {
-                            panic!("don't know how to handle define statement")
-                        }
-                    },
-                    _ => panic!("don't know how to handle define statement")
-                }
-
-            },
-            _ => ()
-        }
-    }
-
     if vec.len() > 0 {
         let first = &vec[0];
 
-        // check left-most value
+        // check for symbols
         if let SyntaxTree::Element(Primitive::Identifier(id)) = first {
             match env.functions.get(id) {
                 Some((signature, body)) => {
@@ -128,9 +105,24 @@ fn interpret_list(mut vec: Vec<SyntaxTree>, env: &mut Environment) -> Primitive 
     }
 }
 
-// signature: [Identifier(x)]
-// params: [Integer(2)]
-// body: SyntaxTree
+fn define_constant(label: String, body: SyntaxTree, env: &mut Environment) -> Primitive {
+    env.variables.insert(label.clone(), body);
+    return Primitive::Identifier(label);
+}
+
+fn define_function(signature: Vec<SyntaxTree>, body: SyntaxTree, env: &mut Environment) -> Primitive {
+    let slice = &signature[..];
+    let label = &slice[0];
+    let arguments: Vec<SyntaxTree> = slice[1..].into();
+
+    if let SyntaxTree::Element(Primitive::Identifier(id)) = label {
+        env.functions.insert(id.clone(), (arguments, body));
+        return Primitive::Identifier(id.clone());
+    } else {
+        panic!("expected unknown type");
+    }
+}
+
 fn apply(signature: Vec<SyntaxTree>, params: Vec<SyntaxTree>, body: SyntaxTree, env: &mut Environment) -> Primitive {
     for (i, id) in signature.into_iter().enumerate() {
         if let SyntaxTree::Element(Primitive::Identifier(label)) = id {
