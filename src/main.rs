@@ -69,8 +69,8 @@ fn interpret_list(vec: Vec<SyntaxTree>, env: &mut Environment) -> Primitive {
     }
 }
 
-/// Builds an abstract syntax tree from tokenized input and returns an SyntaxTree
-fn build_ast(mut input: Vec<String>, node: SyntaxTree) -> SyntaxTree {
+/// Builds an abstract syntax tree from tokenized input and returns a SyntaxTree
+fn parenthesize(input: &mut Vec<String>, node: SyntaxTree) -> SyntaxTree {
     if input.len() == 0 {
         return node
     }
@@ -81,24 +81,24 @@ fn build_ast(mut input: Vec<String>, node: SyntaxTree) -> SyntaxTree {
         let new_node = SyntaxTree::List(Vec::new());
 
         if let SyntaxTree::List(mut list) = node {
-            list.push(build_ast(input.clone(), new_node));
-            return SyntaxTree::List(list);
+            list.push(parenthesize(input, new_node));
+            return parenthesize(input, SyntaxTree::List(list));
         } else {
-            return node;
+            panic!("expected ast node to be list but found {:?}", node);
         }
     } else if token == ")" {
         return node;
     } else {
         if let SyntaxTree::List(mut list) = node {
-            list.push(categorize(token));
-            return build_ast(input.clone(), SyntaxTree::List(list));
+            list.push(categorize(&token));
+            return parenthesize(input, SyntaxTree::List(list));
         } else {
-            return node;
+            panic!("expected ast node to be list but found {:?}", node);
         }
     }
 }
 
-fn categorize(token: String) -> SyntaxTree {
+fn categorize(token: &String) -> SyntaxTree {
     let first_ch = token.chars().next().unwrap();
     let last_ch = token.chars().last().unwrap();
 
@@ -111,18 +111,18 @@ fn categorize(token: String) -> SyntaxTree {
             Primitive::Integer(token.parse().unwrap())
         }
     } else if first_ch == '"' && last_ch == '"' {
-        value = Primitive::String(token);
+        value = Primitive::String(token.to_string());
     } else {
-        value = Primitive::Identifier(token);
+        value = Primitive::Identifier(token.to_string());
     };
 
     return SyntaxTree::Element(value);
 }
 
 fn parse(expression: String) -> SyntaxTree {
-    let tokens = tokenize(expression);
-    let node = SyntaxTree::List(Vec::new());
-    let ast = build_ast(tokens, node);
+    let mut tokens = tokenize(expression);
+    let root_node = SyntaxTree::List(Vec::new());
+    let ast = parenthesize(&mut tokens, root_node);
     println!("\n{:?}\n", ast);
     return ast;
 }
