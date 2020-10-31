@@ -36,7 +36,7 @@ impl fmt::Debug for Primitive {
                 }
                 write!(f, "Tuple({})", out)
             },
-            Primitive::Lambda(i) => write!(f, "Lambda"),
+            Primitive::Lambda(_) => write!(f, "Lambda"),
             Primitive::Null => write!(f, "Null")
         }
     }

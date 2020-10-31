@@ -31,7 +31,7 @@ fn define(list: Vec<Primitive>, env: &mut Environment) -> Primitive {
     }
 }
 
-fn addition(list: Vec<Primitive>, env: &mut Environment) -> Primitive {
+fn addition(list: Vec<Primitive>, _: &mut Environment) -> Primitive {
     let mut has_float = false;
     let result = list.iter().fold(0f64, |acc, x|
               match x {
@@ -49,7 +49,7 @@ fn addition(list: Vec<Primitive>, env: &mut Environment) -> Primitive {
     }
 }
 
-fn subtract(list: Vec<Primitive>, env: &mut Environment) -> Primitive {
+fn subtract(list: Vec<Primitive>, _: &mut Environment) -> Primitive {
     let mut has_float = false;
     let result = list.iter().fold(0f64, |acc, x|
               match x {
@@ -67,7 +67,7 @@ fn subtract(list: Vec<Primitive>, env: &mut Environment) -> Primitive {
     }
 }
 
-fn multiply(list: Vec<Primitive>, env: &mut Environment) -> Primitive {
+fn multiply(list: Vec<Primitive>, _: &mut Environment) -> Primitive {
     let mut has_float = false;
     let result = list.iter().fold(1f64, |acc, x|
               match x {
