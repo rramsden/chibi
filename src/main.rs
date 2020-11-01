@@ -32,18 +32,18 @@ fn tokenize(expression: String) -> Vec<String> {
 }
 
 
-fn interpret(input: SyntaxTree, env: &mut Environment) -> Primitive {
+fn interpret(input: ParseTree, env: &mut Environment) -> Primitive {
     match input {
-        SyntaxTree::List(list) if list.len() > 0 => {
-            if let SyntaxTree::Element(Primitive::Identifier(leftmost)) = &list[0] {
+        ParseTree::List(list) if list.len() > 0 => {
+            if let ParseTree::Element(Primitive::Identifier(leftmost)) = &list[0] {
                 if leftmost == "define" && list.len() == 3 {
                     let arguments = list[1].clone();
                     let body = list[3].clone();
 
-                    if let SyntaxTree::Element(Primitive::Identifier(id)) = arguments {
+                    if let ParseTree::Element(Primitive::Identifier(id)) = arguments {
                         let result = interpret(body, env);
                         return define_constant(id, result, env);
-                    } else if let SyntaxTree::List(signature) = arguments {
+                    } else if let ParseTree::List(signature) = arguments {
                         return define_function(signature, body, env);
                     }
                 } else if let Some((signature, body)) = env.clone().functions.get(leftmost) {
@@ -58,7 +58,7 @@ fn interpret(input: SyntaxTree, env: &mut Environment) -> Primitive {
 
             return interpret_list(list, env)
         },
-        SyntaxTree::Element(primitive) => {
+        ParseTree::Element(primitive) => {
             match primitive {
                 Primitive::Identifier(id) => {
                     match env.variables.get(&id) {
@@ -69,11 +69,11 @@ fn interpret(input: SyntaxTree, env: &mut Environment) -> Primitive {
                 _ => primitive
             }
         },
-        SyntaxTree::List(list) => interpret_list(list, env)
+        ParseTree::List(list) => interpret_list(list, env)
     }
 }
 
-fn interpret_list(vec: Vec<SyntaxTree>, env: &mut Environment) -> Primitive { // Defining functions
+fn interpret_list(vec: Vec<ParseTree>, env: &mut Environment) -> Primitive { // Defining functions
     if vec.is_empty() {
         return Primitive::Null;
     }
@@ -99,12 +99,12 @@ fn define_constant(label: String, value: Primitive, env: &mut Environment) -> Pr
     return Primitive::Identifier(label);
 }
 
-fn define_function(signature: Vec<SyntaxTree>, body: SyntaxTree, env: &mut Environment) -> Primitive {
+fn define_function(signature: Vec<ParseTree>, body: ParseTree, env: &mut Environment) -> Primitive {
     let slice = &signature[..];
     let label = &slice[0];
-    let arguments: Vec<SyntaxTree> = slice[1..].into();
+    let arguments: Vec<ParseTree> = slice[1..].into();
 
-    if let SyntaxTree::Element(Primitive::Identifier(id)) = label {
+    if let ParseTree::Element(Primitive::Identifier(id)) = label {
         env.functions.insert(id.clone(), (arguments, body));
         return Primitive::Identifier(id.clone());
     } else {
@@ -112,9 +112,9 @@ fn define_function(signature: Vec<SyntaxTree>, body: SyntaxTree, env: &mut Envir
     }
 }
 
-fn apply(signature: Vec<SyntaxTree>, values: Vec<Primitive>, body: SyntaxTree, env: &mut Environment) -> Primitive {
+fn apply(signature: Vec<ParseTree>, values: Vec<Primitive>, body: ParseTree, env: &mut Environment) -> Primitive {
     for (i, id) in signature.into_iter().enumerate() {
-        if let SyntaxTree::Element(Primitive::Identifier(varname)) = id {
+        if let ParseTree::Element(Primitive::Identifier(varname)) = id {
             env.variables.insert(varname, values[i].clone());
         }
     }
@@ -122,8 +122,8 @@ fn apply(signature: Vec<SyntaxTree>, values: Vec<Primitive>, body: SyntaxTree, e
     return interpret(body, env);
 }
 
-/// Builds an abstract syntax tree from tokenized input and returns a SyntaxTree
-fn parenthesize(input: &mut Vec<String>, node: SyntaxTree) -> SyntaxTree {
+/// Builds an abstract syntax tree from tokenized input and returns a ParseTree
+fn parenthesize(input: &mut Vec<String>, node: ParseTree) -> ParseTree {
     if input.len() == 0 {
         return node
     }
@@ -131,27 +131,27 @@ fn parenthesize(input: &mut Vec<String>, node: SyntaxTree) -> SyntaxTree {
     let token = input.remove(0);
    
     if token == "(" {
-        let new_node = SyntaxTree::List(Vec::new());
+        let new_node = ParseTree::List(Vec::new());
 
-        if let SyntaxTree::List(mut list) = node {
+        if let ParseTree::List(mut list) = node {
             list.push(parenthesize(input, new_node));
-            return parenthesize(input, SyntaxTree::List(list));
+            return parenthesize(input, ParseTree::List(list));
         } else {
             panic!("expected ast node to be list but found {:?}", node);
         }
     } else if token == ")" {
         return node;
     } else {
-        if let SyntaxTree::List(mut list) = node {
+        if let ParseTree::List(mut list) = node {
             list.push(categorize(&token));
-            return parenthesize(input, SyntaxTree::List(list));
+            return parenthesize(input, ParseTree::List(list));
         } else {
             panic!("expected ast node to be list but found {:?}", node);
         }
     }
 }
 
-fn categorize(token: &String) -> SyntaxTree {
+fn categorize(token: &String) -> ParseTree {
     let first_ch = token.chars().next().unwrap();
     let last_ch = token.chars().last().unwrap();
 
@@ -169,12 +169,12 @@ fn categorize(token: &String) -> SyntaxTree {
         value = Primitive::Identifier(token.to_string());
     };
 
-    return SyntaxTree::Element(value);
+    return ParseTree::Element(value);
 }
 
-fn parse(expression: String) -> SyntaxTree {
+fn parse(expression: String) -> ParseTree {
     let mut tokens = tokenize(expression);
-    let root_node = SyntaxTree::List(Vec::new());
+    let root_node = ParseTree::List(Vec::new());
     let ast = parenthesize(&mut tokens, root_node);
     // println!("\n{:?}\n", ast);
     return ast;

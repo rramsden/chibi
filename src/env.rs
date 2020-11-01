@@ -7,7 +7,7 @@ pub struct Environment {
     pub variables: HashMap<String, Primitive>,
 
     // label, (signature, body)
-    pub functions: HashMap<String, (Vec<SyntaxTree>, SyntaxTree)>
+    pub functions: HashMap<String, (Vec<ParseTree>, ParseTree)>
 }
 
 pub fn standard_env() -> Environment {
@@ -17,7 +17,7 @@ pub fn standard_env() -> Environment {
     stdlib.insert("*".to_string(), Primitive::Lambda(multiply));
 
     let variables: HashMap<String, Primitive> = HashMap::new();
-    let functions: HashMap<String, (Vec<SyntaxTree>, SyntaxTree)> = HashMap::new();
+    let functions: HashMap<String, (Vec<ParseTree>, ParseTree)> = HashMap::new();
 
     Environment { stdlib, variables, functions }
 }

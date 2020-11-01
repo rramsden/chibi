@@ -2,9 +2,9 @@ use std::fmt;
 use super::env::Environment;
 
 #[derive(Clone)]
-pub enum SyntaxTree {
+pub enum ParseTree {
     Element(Primitive),
-    List(Vec<SyntaxTree>)
+    List(Vec<ParseTree>)
 }
 
 #[derive(Clone)]
@@ -44,18 +44,18 @@ impl fmt::Debug for Primitive {
 
 type Lambda = fn(Vec<Primitive>, &mut Environment) -> Primitive;
 
-impl fmt::Debug for SyntaxTree {
+impl fmt::Debug for ParseTree {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", format_tree(self, 0))
     }
 }
 
-fn format_tree(tree: &SyntaxTree, indent: i32) -> String {
+fn format_tree(tree: &ParseTree, indent: i32) -> String {
     let mut output = String::from("");
 
     match tree {
-        SyntaxTree::Element(e) => { format!("{:?}", e) },
-        SyntaxTree::List(vec) => {
+        ParseTree::Element(e) => { format!("{:?}", e) },
+        ParseTree::List(vec) => {
             for _ in 0..indent { output.push_str("  "); }
 
             for (pos, ast) in vec.iter().enumerate() {
