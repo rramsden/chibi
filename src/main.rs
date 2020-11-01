@@ -7,12 +7,12 @@ use std::io::{self, Write, BufRead};
 
 fn main() {
     // global lisp environment
-    let mut env = env::standard_env();
+    let mut scope = env::standard_env();
 
     loop {
         print!("> ");
         let expression = read();
-        let result = interpret(parse(expression), &mut env);
+        let result = interpret(parse(expression), &mut scope);
 
         println!("{:?}", result);
     }
@@ -32,7 +32,7 @@ fn tokenize(expression: String) -> Vec<String> {
 }
 
 
-fn interpret(input: ParseTree, env: &mut Environment) -> Primitive {
+fn interpret(input: ParseTree, scope: &mut Environment) -> Primitive {
     match input {
         ParseTree::List(list) if list.len() > 0 => {
             if let ParseTree::Element(Primitive::Identifier(leftmost)) = &list[0] {
@@ -41,27 +41,27 @@ fn interpret(input: ParseTree, env: &mut Environment) -> Primitive {
                     let body = list[2].clone();
 
                     if let ParseTree::Element(Primitive::Identifier(id)) = arguments {
-                        let result = interpret(body, env);
-                        return define_constant(id, result, env);
+                        let result = interpret(body, scope);
+                        return define_constant(id, result, scope);
                     } else if let ParseTree::List(signature) = arguments {
-                        return define_function(signature, body, env);
+                        return define_function(signature, body, scope);
                     }
-                } else if let Some((signature, body)) = env.clone().functions.get(leftmost) {
+                } else if let Some((signature, body)) = scope.clone().functions.get(leftmost) {
                     let mut params: Vec<Primitive> = vec![];
                     for param in list[1..].into_iter() {
-                        params.push( interpret(param.clone(), env).clone() )
+                        params.push( interpret(param.clone(), scope).clone() )
                     }
 
-                    return apply(signature.to_vec(), params, body.clone(), env);
+                    return apply(signature.to_vec(), params, body.clone(), scope);
                 }
             }
 
-            return interpret_list(list, env)
+            return interpret_list(list, scope)
         },
         ParseTree::Element(primitive) => {
             match primitive {
                 Primitive::Identifier(id) => {
-                    match env.variables.get(&id) {
+                    match scope.variables.get(&id) {
                         Some(primitive) => return primitive.clone(),
                         _ => return Primitive::Identifier(id)
                     }
@@ -69,20 +69,20 @@ fn interpret(input: ParseTree, env: &mut Environment) -> Primitive {
                 _ => primitive
             }
         },
-        ParseTree::List(list) => interpret_list(list, env)
+        ParseTree::List(list) => interpret_list(list, scope)
     }
 }
 
-fn interpret_list(vec: Vec<ParseTree>, env: &mut Environment) -> Primitive { // Defining functions
+fn interpret_list(vec: Vec<ParseTree>, scope: &mut Environment) -> Primitive { // Defining functions
     if vec.is_empty() {
         return Primitive::Null;
     }
 
-    let slice: Vec<Primitive> = vec.into_iter().map(|tree| interpret(tree, env)).collect();
+    let slice: Vec<Primitive> = vec.into_iter().map(|tree| interpret(tree, scope)).collect();
 
     if let Primitive::Identifier(id) = slice.first().unwrap() {
-        match env.stdlib.get(id) {
-            Some(Primitive::Lambda(lambda)) => return lambda(slice[1..].to_vec(), env),
+        match scope.stdlib.get(id) {
+            Some(Primitive::Lambda(lambda)) => return lambda(slice[1..].to_vec(), scope),
             _ => return Primitive::Tuple(slice)
         }
     } else {
@@ -94,32 +94,32 @@ fn interpret_list(vec: Vec<ParseTree>, env: &mut Environment) -> Primitive { // 
     }
 }
 
-fn define_constant(label: String, value: Primitive, env: &mut Environment) -> Primitive {
-    env.variables.insert(label.clone(), value);
+fn define_constant(label: String, value: Primitive, scope: &mut Environment) -> Primitive {
+    scope.variables.insert(label.clone(), value);
     return Primitive::Identifier(label);
 }
 
-fn define_function(signature: Vec<ParseTree>, body: ParseTree, env: &mut Environment) -> Primitive {
+fn define_function(signature: Vec<ParseTree>, body: ParseTree, scope: &mut Environment) -> Primitive {
     let slice = &signature[..];
     let label = &slice[0];
     let arguments: Vec<ParseTree> = slice[1..].into();
 
     if let ParseTree::Element(Primitive::Identifier(id)) = label {
-        env.functions.insert(id.clone(), (arguments, body));
+        scope.functions.insert(id.clone(), (arguments, body));
         return Primitive::Identifier(id.clone());
     } else {
         panic!("expected unknown type");
     }
 }
 
-fn apply(signature: Vec<ParseTree>, values: Vec<Primitive>, body: ParseTree, env: &mut Environment) -> Primitive {
+fn apply(signature: Vec<ParseTree>, values: Vec<Primitive>, body: ParseTree, scope: &mut Environment) -> Primitive {
     for (i, id) in signature.into_iter().enumerate() {
         if let ParseTree::Element(Primitive::Identifier(varname)) = id {
-            env.variables.insert(varname, values[i].clone());
+            scope.variables.insert(varname, values[i].clone());
         }
     }
 
-    return interpret(body, env);
+    return interpret(body, scope);
 }
 
 /// Builds an abstract syntax tree from tokenized input and returns a ParseTree
