@@ -31,7 +31,6 @@ fn tokenize(expression: String) -> Vec<String> {
     expression.split_whitespace().map(|s| s.to_string()).collect()
 }
 
-
 fn interpret(input: ParseTree, scope: &mut Environment) -> Primitive {
     match input {
         ParseTree::List(list) if list.len() > 0 => {
@@ -56,8 +55,23 @@ fn interpret(input: ParseTree, scope: &mut Environment) -> Primitive {
                 }
             }
 
-            return interpret_list(list, scope)
+            // map over and eval all elements in list
+            let slice: Vec<Primitive> = list.into_iter().map(|tree| interpret(tree, scope)).collect();
+
+            if let Primitive::Identifier(id) = slice.first().unwrap() {
+                match scope.stdlib.get(id) {
+                    Some(Primitive::Lambda(lambda)) => return lambda(slice[1..].to_vec(), scope),
+                    _ => return Primitive::Tuple(slice)
+                }
+            } else {
+                if slice.len() == 1 {
+                    slice[0].clone()
+                } else {
+                    Primitive::Tuple(slice)
+                }
+            }
         },
+        ParseTree::List(_) => Primitive::Tuple(vec![]), // empty case
         ParseTree::Element(primitive) => {
             match primitive {
                 Primitive::Identifier(id) => {
@@ -68,28 +82,6 @@ fn interpret(input: ParseTree, scope: &mut Environment) -> Primitive {
                 }
                 _ => primitive
             }
-        },
-        ParseTree::List(list) => interpret_list(list, scope)
-    }
-}
-
-fn interpret_list(vec: Vec<ParseTree>, scope: &mut Environment) -> Primitive { // Defining functions
-    if vec.is_empty() {
-        return Primitive::Null;
-    }
-
-    let slice: Vec<Primitive> = vec.into_iter().map(|tree| interpret(tree, scope)).collect();
-
-    if let Primitive::Identifier(id) = slice.first().unwrap() {
-        match scope.stdlib.get(id) {
-            Some(Primitive::Lambda(lambda)) => return lambda(slice[1..].to_vec(), scope),
-            _ => return Primitive::Tuple(slice)
-        }
-    } else {
-        if slice.len() == 1 {
-            slice[0].clone()
-        } else {
-            Primitive::Tuple(slice)
         }
     }
 }
