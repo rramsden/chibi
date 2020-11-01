@@ -34,11 +34,11 @@ fn tokenize(expression: String) -> Vec<String> {
 
 fn interpret(input: SyntaxTree, env: &mut Environment) -> Primitive {
     match input {
-        SyntaxTree::List(list) => {
+        SyntaxTree::List(list) if list.len() > 0 => {
             if let SyntaxTree::Element(Primitive::Identifier(leftmost)) = &list[0] {
                 if leftmost == "define" && list.len() == 3 {
                     let arguments = list[1].clone();
-                    let body = list[2].clone();
+                    let body = list[3].clone();
 
                     if let SyntaxTree::Element(Primitive::Identifier(id)) = arguments {
                         let result = interpret(body, env);
@@ -68,7 +68,8 @@ fn interpret(input: SyntaxTree, env: &mut Environment) -> Primitive {
                 }
                 _ => primitive
             }
-        }
+        },
+        SyntaxTree::List(list) => interpret_list(list, env)
     }
 }
 
