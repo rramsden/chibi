@@ -38,7 +38,7 @@ fn interpret(input: ParseTree, env: &mut Environment) -> Primitive {
             if let ParseTree::Element(Primitive::Identifier(leftmost)) = &list[0] {
                 if leftmost == "define" && list.len() == 3 {
                     let arguments = list[1].clone();
-                    let body = list[3].clone();
+                    let body = list[2].clone();
 
                     if let ParseTree::Element(Primitive::Identifier(id)) = arguments {
                         let result = interpret(body, env);
@@ -175,9 +175,9 @@ fn categorize(token: &String) -> ParseTree {
 fn parse(expression: String) -> ParseTree {
     let mut tokens = tokenize(expression);
     let root_node = ParseTree::List(Vec::new());
-    let ast = parenthesize(&mut tokens, root_node);
-    println!("\n{:?}\n", ast);
-    return ast;
+    let parse_tree = parenthesize(&mut tokens, root_node);
+    println!("\n{:?}\n", parse_tree);
+    return parse_tree;
 }
 
 fn read() -> String {
