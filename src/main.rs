@@ -74,23 +74,23 @@ fn interpret(input: SyntaxTree, env: &mut Environment) -> Primitive {
 }
 
 fn interpret_list(vec: Vec<SyntaxTree>, env: &mut Environment) -> Primitive { // Defining functions
-    if vec.len() > 0 {
-        let slice: Vec<Primitive> = vec.into_iter().map(|tree| interpret(tree, env)).collect();
+    if vec.is_empty() {
+        return Primitive::Null;
+    }
 
-        if let Primitive::Identifier(id) = slice.first().unwrap() {
-            match env.stdlib.get(id) {
-                Some(Primitive::Lambda(lambda)) => return lambda(slice[1..].to_vec(), env),
-                _ => return Primitive::Tuple(slice)
-            }
-        } else {
-            if slice.len() == 1 {
-                slice[0].clone()
-            } else {
-                Primitive::Tuple(slice)
-            }
+    let slice: Vec<Primitive> = vec.into_iter().map(|tree| interpret(tree, env)).collect();
+
+    if let Primitive::Identifier(id) = slice.first().unwrap() {
+        match env.stdlib.get(id) {
+            Some(Primitive::Lambda(lambda)) => return lambda(slice[1..].to_vec(), env),
+            _ => return Primitive::Tuple(slice)
         }
     } else {
-        return Primitive::Null
+        if slice.len() == 1 {
+            slice[0].clone()
+        } else {
+            Primitive::Tuple(slice)
+        }
     }
 }
 
