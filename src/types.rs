@@ -1,5 +1,5 @@
 use std::fmt;
-use super::env::Environment;
+use super::env::Scope;
 
 #[derive(Clone)]
 pub enum ParseTree {

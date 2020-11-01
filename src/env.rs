@@ -2,7 +2,7 @@ use super::types::*;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
-pub struct Environment {
+pub struct Scope {
     pub stdlib: HashMap<String, Primitive>,
     pub variables: HashMap<String, Primitive>,
 
@@ -10,7 +10,7 @@ pub struct Environment {
     pub functions: HashMap<String, (Vec<ParseTree>, ParseTree)>
 }
 
-pub fn standard_env() -> Environment {
+pub fn standard_env() -> Scope {
     let mut stdlib: HashMap<String, Primitive> = HashMap::new();
     stdlib.insert("+".to_string(), Primitive::Lambda(addition));
     stdlib.insert("-".to_string(), Primitive::Lambda(subtract));
@@ -19,7 +19,7 @@ pub fn standard_env() -> Environment {
     let variables: HashMap<String, Primitive> = HashMap::new();
     let functions: HashMap<String, (Vec<ParseTree>, ParseTree)> = HashMap::new();
 
-    Environment { stdlib, variables, functions }
+    Scope { stdlib, variables, functions }
 }
 
 fn addition(list: Vec<Primitive>) -> Primitive {

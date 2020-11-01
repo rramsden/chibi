@@ -2,7 +2,7 @@ mod env;
 mod types;
 
 use types::*;
-use env::Environment;
+use env::Scope;
 use std::io::{self, Write, BufRead};
 
 fn main() {
@@ -12,8 +12,8 @@ fn main() {
     loop {
         print!("> ");
         let expression = read();
-        let result = interpret(parse(expression), &mut scope);
-
+        let (result, result_scope) = interpret(parse(expression), scope, true);
+        scope = result_scope;
         println!("{:?}", result);
     }
 }
@@ -31,7 +31,7 @@ fn tokenize(expression: String) -> Vec<String> {
     expression.split_whitespace().map(|s| s.to_string()).collect()
 }
 
-fn interpret(input: ParseTree, scope: &mut Environment) -> Primitive {
+fn interpret(input: ParseTree, scope: Scope, global: bool) -> (Primitive, Scope) {
     match input {
         ParseTree::List(list) if list.len() > 0 => {
             if let ParseTree::Element(Primitive::Identifier(leftmost)) = &list[0] {
@@ -40,79 +40,90 @@ fn interpret(input: ParseTree, scope: &mut Environment) -> Primitive {
                     let body = list[2].clone();
 
                     if let ParseTree::Element(Primitive::Identifier(id)) = arguments {
-                        let result = interpret(body, scope);
-                        return define_constant(id, result, scope);
+                        let (result, new_scope) = interpret(body, scope, false);
+                        return define_constant(id, result, new_scope);
                     } else if let ParseTree::List(signature) = arguments {
                         return define_function(signature, body, scope);
                     }
                 } else if let Some((signature, body)) = scope.clone().functions.get(leftmost) {
                     let mut params: Vec<Primitive> = vec![];
                     for param in list[1..].into_iter() {
-                        params.push( interpret(param.clone(), scope).clone() )
+                        let (result, _) = interpret(param.clone(), scope.clone(), false).clone();
+                        params.push( result )
                     }
 
                     return apply(signature.to_vec(), params, body.clone(), scope);
                 }
             }
 
-            // map over and eval all elements in list with a new scope
             let mut new_scope = scope.clone();
-            let slice: Vec<Primitive> = list.into_iter().map(|tree| interpret(tree, &mut new_scope)).collect();
+            let mut results: Vec<Primitive> = vec![];
 
-            if let Primitive::Identifier(id) = slice.first().unwrap() {
-                match scope.stdlib.get(id) {
-                    Some(Primitive::Lambda(lambda)) => return lambda(slice[1..].to_vec()),
-                    _ => return Primitive::Tuple(slice)
+            for element in list {
+                let (result, updated_scope) = interpret(element, new_scope, false);
+                results.push(result);
+                new_scope = updated_scope;
+            }
+
+            if !global {
+                new_scope = scope;
+            }
+
+            if let Primitive::Identifier(id) = results.first().unwrap() {
+                match new_scope.stdlib.get(id) {
+                    Some(Primitive::Lambda(lambda)) => return (lambda(results[1..].to_vec()), new_scope),
+                    _ => return (Primitive::Tuple(results), new_scope)
                 }
             } else {
-                if slice.len() == 1 {
-                    slice[0].clone()
+                if results.len() == 1 {
+                    return (results[0].clone(), new_scope)
                 } else {
-                    Primitive::Tuple(slice)
+                    return (Primitive::Tuple(results), new_scope)
                 }
             }
         },
-        ParseTree::List(_) => Primitive::Tuple(vec![]), // empty case
+        ParseTree::List(_) => (Primitive::Tuple(vec![]), scope), // empty case
         ParseTree::Element(primitive) => {
             match primitive {
                 Primitive::Identifier(id) => {
                     match scope.variables.get(&id) {
-                        Some(primitive) => return primitive.clone(),
-                        _ => return Primitive::Identifier(id)
+                        Some(primitive) => return (primitive.clone(), scope),
+                        _ => return (Primitive::Identifier(id), scope)
                     }
                 }
-                _ => primitive
+                _ => return (primitive, scope)
             }
         }
     }
 }
 
-fn define_constant(label: String, value: Primitive, scope: &mut Environment) -> Primitive {
+fn define_constant(label: String, value: Primitive, mut scope: Scope) -> (Primitive, Scope) {
+    println!("define constant {}", label);
     scope.variables.insert(label.clone(), value);
-    return Primitive::Identifier(label);
+    return (Primitive::Identifier(label), scope);
 }
 
-fn define_function(signature: Vec<ParseTree>, body: ParseTree, scope: &mut Environment) -> Primitive {
+fn define_function(signature: Vec<ParseTree>, body: ParseTree, mut scope: Scope) -> (Primitive, Scope) {
     let slice = &signature[..];
     let label = &slice[0];
     let arguments: Vec<ParseTree> = slice[1..].into();
 
     if let ParseTree::Element(Primitive::Identifier(id)) = label {
         scope.functions.insert(id.clone(), (arguments, body));
-        return Primitive::Identifier(id.clone());
+        return (Primitive::Identifier(id.clone()), scope);
     } else {
         panic!("expected unknown type");
     }
 }
 
-fn apply(signature: Vec<ParseTree>, values: Vec<Primitive>, body: ParseTree, scope: &mut Environment) -> Primitive {
+fn apply(signature: Vec<ParseTree>, values: Vec<Primitive>, body: ParseTree, mut scope: Scope) -> (Primitive, Scope) {
     for (i, id) in signature.into_iter().enumerate() {
         if let ParseTree::Element(Primitive::Identifier(varname)) = id {
             scope.variables.insert(varname, values[i].clone());
         }
     }
 
-    return interpret(body, scope);
+    return interpret(body, scope, false);
 }
 
 /// Builds an abstract syntax tree from tokenized input and returns a ParseTree
