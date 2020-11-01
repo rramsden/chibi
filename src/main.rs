@@ -55,12 +55,13 @@ fn interpret(input: ParseTree, scope: &mut Environment) -> Primitive {
                 }
             }
 
-            // map over and eval all elements in list
-            let slice: Vec<Primitive> = list.into_iter().map(|tree| interpret(tree, scope)).collect();
+            // map over and eval all elements in list with a new scope
+            let mut new_scope = scope.clone();
+            let slice: Vec<Primitive> = list.into_iter().map(|tree| interpret(tree, &mut new_scope)).collect();
 
             if let Primitive::Identifier(id) = slice.first().unwrap() {
                 match scope.stdlib.get(id) {
-                    Some(Primitive::Lambda(lambda)) => return lambda(slice[1..].to_vec(), scope),
+                    Some(Primitive::Lambda(lambda)) => return lambda(slice[1..].to_vec()),
                     _ => return Primitive::Tuple(slice)
                 }
             } else {

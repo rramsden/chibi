@@ -42,7 +42,7 @@ impl fmt::Debug for Primitive {
     }
 }
 
-type Lambda = fn(Vec<Primitive>, &mut Environment) -> Primitive;
+type Lambda = fn(Vec<Primitive>) -> Primitive;
 
 impl fmt::Debug for ParseTree {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
