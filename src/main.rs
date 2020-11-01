@@ -43,9 +43,9 @@ fn interpret(input: ParseTree, scope: Scope, global: bool) -> (Primitive, Scope)
                         let (result, new_scope) = interpret(body, scope, false);
                         return define_constant(id, result, new_scope);
                     } else if let ParseTree::List(signature) = arguments {
-                        return define_function(signature, body, scope);
+                        return define_procedure(signature, body, scope);
                     }
-                } else if let Some((signature, body)) = scope.clone().functions.get(leftmost) {
+                } else if let Some((signature, body)) = scope.clone().procedures.get(leftmost) {
                     let mut params: Vec<Primitive> = vec![];
                     for param in list[1..].into_iter() {
                         let (result, _) = interpret(param.clone(), scope.clone(), false).clone();
@@ -103,13 +103,13 @@ fn define_constant(label: String, value: Primitive, mut scope: Scope) -> (Primit
     return (Primitive::Identifier(label), scope);
 }
 
-fn define_function(signature: Vec<ParseTree>, body: ParseTree, mut scope: Scope) -> (Primitive, Scope) {
+fn define_procedure(signature: Vec<ParseTree>, body: ParseTree, mut scope: Scope) -> (Primitive, Scope) {
     let slice = &signature[..];
     let name = &slice[0];
     let formal_arguments: Vec<ParseTree> = slice[1..].into();
 
     if let ParseTree::Element(Primitive::Identifier(id)) = name {
-        scope.functions.insert(id.clone(), (formal_arguments, body));
+        scope.procedures.insert(id.clone(), (formal_arguments, body));
         return (Primitive::Identifier(id.clone()), scope);
     } else {
         panic!("expected unknown type");

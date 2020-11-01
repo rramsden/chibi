@@ -7,7 +7,7 @@ pub struct Scope {
     pub variables: HashMap<String, Primitive>,
 
     // label, (signature, body)
-    pub functions: HashMap<String, (Vec<ParseTree>, ParseTree)>
+    pub procedures: HashMap<String, (Vec<ParseTree>, ParseTree)>
 }
 
 pub fn standard_env() -> Scope {
@@ -17,9 +17,9 @@ pub fn standard_env() -> Scope {
     stdlib.insert("*".to_string(), Primitive::Lambda(multiply));
 
     let variables: HashMap<String, Primitive> = HashMap::new();
-    let functions: HashMap<String, (Vec<ParseTree>, ParseTree)> = HashMap::new();
+    let procedures: HashMap<String, (Vec<ParseTree>, ParseTree)> = HashMap::new();
 
-    Scope { stdlib, variables, functions }
+    Scope { stdlib, variables, procedures }
 }
 
 fn addition(list: Vec<Primitive>) -> Primitive {
