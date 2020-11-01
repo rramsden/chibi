@@ -105,11 +105,11 @@ fn define_constant(label: String, value: Primitive, mut scope: Scope) -> (Primit
 
 fn define_function(signature: Vec<ParseTree>, body: ParseTree, mut scope: Scope) -> (Primitive, Scope) {
     let slice = &signature[..];
-    let label = &slice[0];
-    let arguments: Vec<ParseTree> = slice[1..].into();
+    let name = &slice[0];
+    let formal_arguments: Vec<ParseTree> = slice[1..].into();
 
-    if let ParseTree::Element(Primitive::Identifier(id)) = label {
-        scope.functions.insert(id.clone(), (arguments, body));
+    if let ParseTree::Element(Primitive::Identifier(id)) = name {
+        scope.functions.insert(id.clone(), (formal_arguments, body));
         return (Primitive::Identifier(id.clone()), scope);
     } else {
         panic!("expected unknown type");
