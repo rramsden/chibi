@@ -176,7 +176,7 @@ fn parse(expression: String) -> ParseTree {
     let mut tokens = tokenize(expression);
     let root_node = ParseTree::List(Vec::new());
     let ast = parenthesize(&mut tokens, root_node);
-    // println!("\n{:?}\n", ast);
+    println!("\n{:?}\n", ast);
     return ast;
 }
 
