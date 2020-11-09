@@ -6,6 +6,15 @@ pub enum ParseTree {
     List(Vec<ParseTree>)
 }
 
+impl PartialEq for ParseTree {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (ParseTree::List(vec1), ParseTree::List(vec2)) => vec1 == vec2,
+            _ => false
+        }
+    }
+}
+
 #[derive(Clone)]
 pub enum Primitive {
     Identifier(String),
