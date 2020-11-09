@@ -1,5 +1,4 @@
 use std::fmt;
-use super::env::Scope;
 
 #[derive(Clone)]
 pub enum ParseTree {
@@ -14,8 +13,7 @@ pub enum Primitive {
     Integer(i32),
     Float(f64),
     Tuple(Vec<Primitive>),
-    Lambda(Lambda),
-    Null
+    Lambda(Lambda)
 }
 
 impl fmt::Debug for Primitive {
@@ -36,8 +34,7 @@ impl fmt::Debug for Primitive {
                 }
                 write!(f, "Tuple({})", out)
             },
-            Primitive::Lambda(_) => write!(f, "Lambda"),
-            Primitive::Null => write!(f, "Null")
+            Primitive::Lambda(_) => write!(f, "Lambda")
         }
     }
 }
