@@ -14,7 +14,7 @@ fn main() {
     loop {
         print!("> ");
         let expression = read();
-        let (result, result_scope) = interpret(parse(expression), scope, true);
+        let (result, result_scope) = interpret(parse(&expression), scope, true);
         scope = result_scope;
         println!("{:?}", result);
     }

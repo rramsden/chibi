@@ -1,6 +1,6 @@
 use super::types::*;
 
-pub fn parse(expression: String) -> ParseTree {
+pub fn parse(expression: &str) -> ParseTree {
     let mut tokens = tokenize(expression);
     let root_node = ParseTree::List(Vec::new());
     let parse_tree = parenthesize(&mut tokens, root_node);
@@ -10,7 +10,7 @@ pub fn parse(expression: String) -> ParseTree {
 /// Take an input string and split on whitespace
 ///
 /// Given (+ 1 1) it returns vec!['(', '+', '1', '1', ')']
-fn tokenize(expression: String) -> Vec<String> {
+fn tokenize(expression: &str) -> Vec<String> {
     let expression = expression 
         .replace("(", " ( ")
         .replace(")", " ) ")
@@ -75,7 +75,17 @@ mod tests {
 
     #[test]
     fn test_parse() {
-        let parse_tree = ParseTree::List(vec![]);
-        assert_eq!(parse(String::from("(+ 1 1)")), parse_tree);
+        let parse_tree = ParseTree::List(
+            vec![
+                ParseTree::List(
+                    vec![
+                        ParseTree::Element(Primitive::Identifier(String::from("+"))),
+                        ParseTree::Element(Primitive::Integer(1)),
+                        ParseTree::Element(Primitive::Integer(1))
+                    ]
+                )
+            ]
+        );
+        assert_eq!(parse("(+ 1 1)"), parse_tree);
     }
 }
