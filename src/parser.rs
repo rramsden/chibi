@@ -61,7 +61,7 @@ fn categorize(token: &String) -> ParseTree {
             Primitive::Integer(token.parse().unwrap())
         }
     } else if first_ch == '"' && last_ch == '"' {
-        value = Primitive::String(token.to_string());
+        value = Primitive::String(token[1..token.len() - 1].to_string());
     } else {
         value = Primitive::Identifier(token.to_string());
     };
@@ -74,18 +74,32 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_parse() {
+    fn parses_expressions() {
         let parse_tree = ParseTree::List(
             vec![
                 ParseTree::List(
                     vec![
                         ParseTree::Element(Primitive::Identifier(String::from("+"))),
                         ParseTree::Element(Primitive::Integer(1)),
-                        ParseTree::Element(Primitive::Integer(1))
+                        ParseTree::List(
+                            vec![
+                                ParseTree::Element(Primitive::Identifier(String::from("-"))),
+                                ParseTree::Element(Primitive::Integer(1)),
+                                ParseTree::Element(Primitive::Integer(1))
+                            ]
+                        )
                     ]
                 )
             ]
         );
-        assert_eq!(parse("(+ 1 1)"), parse_tree);
+        assert_eq!(parse("(+ 1 (- 1 1))"), parse_tree);
+    }
+
+    #[test]
+    fn parses_primatives() {
+        assert_eq!(parse("123"),        ParseTree::List(vec![ParseTree::Element(Primitive::Integer(123))]));
+        assert_eq!(parse("\"string\""), ParseTree::List(vec![ParseTree::Element(Primitive::String(String::from("string")))]));
+        assert_eq!(parse("1.5"),        ParseTree::List(vec![ParseTree::Element(Primitive::Float(1.5))]));
+        assert_eq!(parse("hello"),      ParseTree::List(vec![ParseTree::Element(Primitive::Identifier(String::from("hello")))]));
     }
 }
