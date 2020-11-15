@@ -10,12 +10,13 @@ impl PartialEq for ParseTree {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (ParseTree::List(vec1), ParseTree::List(vec2)) => vec1 == vec2,
+            (ParseTree::Element(e1), ParseTree::Element(e2)) => e1 == e2,
             _ => false
         }
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum Primitive {
     Identifier(String),
     String(String),
