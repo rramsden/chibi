@@ -16,6 +16,8 @@ pub fn standard_env() -> Scope {
     stdlib.insert("-".to_string(), Primitive::Lambda(subtract));
     stdlib.insert("*".to_string(), Primitive::Lambda(multiply));
     stdlib.insert(">".to_string(), Primitive::Lambda(greater_than));
+    stdlib.insert(">=".to_string(), Primitive::Lambda(greater_than_equals));
+    stdlib.insert("<=".to_string(), Primitive::Lambda(less_than_equals));
     stdlib.insert("<".to_string(), Primitive::Lambda(less_than));
     stdlib.insert("=".to_string(), Primitive::Lambda(equals));
 
@@ -36,6 +38,16 @@ fn greater_than(list: Vec<Primitive>) -> Primitive {
     }
 
     return Primitive::Bool(false);
+}
+
+fn greater_than_equals(list: Vec<Primitive>) -> Primitive {
+    if greater_than(list.clone()) == Primitive::Bool(true) {
+        return Primitive::Bool(true);
+    } else if equals(list.clone()) == Primitive::Bool(true) {
+        return Primitive::Bool(true);
+    } else {
+        return Primitive::Bool(false);
+    }
 }
 
 fn equals(list: Vec<Primitive>) -> Primitive {
@@ -62,6 +74,16 @@ fn less_than(list: Vec<Primitive>) -> Primitive {
     }
 
     return Primitive::Bool(false);
+}
+
+fn less_than_equals(list: Vec<Primitive>) -> Primitive {
+    if less_than(list.clone()) == Primitive::Bool(true) {
+        return Primitive::Bool(true);
+    } else if equals(list.clone()) == Primitive::Bool(true) {
+        return Primitive::Bool(true);
+    } else {
+        return Primitive::Bool(false);
+    }
 }
 
 fn addition(list: Vec<Primitive>) -> Primitive {
