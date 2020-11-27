@@ -27,7 +27,7 @@ pub fn interpret(input: ParseTree, scope: Scope, global: bool) -> (Primitive, Sc
                             }
                         }
                     }
-                    panic!("case analysis failed to yield true result");
+                    return (Primitive::Null, scope);
                 } else if let Some((signature, body)) = scope.clone().procedures.get(leftmost) {
                     let mut params: Vec<Primitive> = vec![];
 
@@ -131,5 +131,13 @@ mod tests {
 
         let (result, _) = interpret(parse_tree, scope, true);
         assert_eq!(result, Primitive::Integer(5));
+    }
+
+    #[test]
+    fn test_case_analysis_undefined() {
+        let scope = env::standard_env();
+        let parse_tree = parse("(cond (= 1 2))");
+        let (result, _) = interpret(parse_tree, scope, true);
+        assert_eq!(result, Primitive::Null);
     }
 }
