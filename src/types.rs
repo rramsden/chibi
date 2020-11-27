@@ -22,6 +22,7 @@ pub enum Primitive {
     String(String),
     Integer(i32),
     Float(f64),
+    Bool(bool),
     Tuple(Vec<Primitive>),
     Lambda(Lambda)
 }
@@ -33,6 +34,7 @@ impl fmt::Debug for Primitive {
             Primitive::String(i) => write!(f, "String({})", i),
             Primitive::Integer(i) => write!(f, "Integer({})", i),
             Primitive::Float(i) => write!(f, "Float({})", i),
+            Primitive::Bool(i) => write!(f, "Bool({})", i),
             Primitive::Tuple(vec) => {
                 let mut out = String::from("");
                 for (pos, p) in vec.iter().enumerate() {

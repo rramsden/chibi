@@ -15,11 +15,53 @@ pub fn standard_env() -> Scope {
     stdlib.insert("+".to_string(), Primitive::Lambda(addition));
     stdlib.insert("-".to_string(), Primitive::Lambda(subtract));
     stdlib.insert("*".to_string(), Primitive::Lambda(multiply));
+    stdlib.insert(">".to_string(), Primitive::Lambda(greater_than));
+    stdlib.insert("<".to_string(), Primitive::Lambda(less_than));
+    stdlib.insert("=".to_string(), Primitive::Lambda(equals));
 
     let variables: HashMap<String, Primitive> = HashMap::new();
     let procedures: HashMap<String, (Vec<ParseTree>, ParseTree)> = HashMap::new();
 
     Scope { stdlib, variables, procedures }
+}
+
+fn greater_than(list: Vec<Primitive>) -> Primitive {
+    let left = &list[0];
+    let right = &list[1];
+
+    if let Primitive::Integer(a1) = left {
+        if let Primitive::Integer(a2) = right {
+            return Primitive::Bool(a1 > a2);
+        }
+    }
+
+    return Primitive::Bool(false);
+}
+
+fn equals(list: Vec<Primitive>) -> Primitive {
+    let left = &list[0];
+    let right = &list[1];
+
+    if let Primitive::Integer(a1) = left {
+        if let Primitive::Integer(a2) = right {
+            return Primitive::Bool(a1 == a2);
+        }
+    }
+
+    return Primitive::Bool(false);
+}
+
+fn less_than(list: Vec<Primitive>) -> Primitive {
+    let left = &list[0];
+    let right = &list[1];
+
+    if let Primitive::Integer(a1) = left {
+        if let Primitive::Integer(a2) = right {
+            return Primitive::Bool(a1 < a2);
+        }
+    }
+
+    return Primitive::Bool(false);
 }
 
 fn addition(list: Vec<Primitive>) -> Primitive {

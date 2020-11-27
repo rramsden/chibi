@@ -15,8 +15,22 @@ pub fn interpret(input: ParseTree, scope: Scope, global: bool) -> (Primitive, Sc
                     } else if let ParseTree::List(signature) = arguments {
                         return define_procedure(signature, body, scope);
                     }
+                } else if leftmost == "cond" {
+                    for clause in list[1..].into_iter() {
+                        if let ParseTree::List(expressions) = clause {
+                            let predicate = &expressions[0];
+                            let expression = &expressions[1];
+                            let (result, _) = interpret(predicate.clone(), scope.clone(), false);
+
+                            if result == Primitive::Bool(true) {
+                                return interpret(expression.clone(), scope.clone(), false);
+                            }
+                        }
+                    }
+                    panic!("case analysis failed to yield true result");
                 } else if let Some((signature, body)) = scope.clone().procedures.get(leftmost) {
                     let mut params: Vec<Primitive> = vec![];
+
                     for param in list[1..].into_iter() {
                         let (result, _) = interpret(param.clone(), scope.clone(), false).clone();
                         params.push( result )
@@ -35,6 +49,8 @@ pub fn interpret(input: ParseTree, scope: Scope, global: bool) -> (Primitive, Sc
                 new_scope = updated_scope;
             }
 
+            let last_result = results.last().unwrap().clone();
+
             if !global {
                 new_scope = scope;
             }
@@ -42,13 +58,13 @@ pub fn interpret(input: ParseTree, scope: Scope, global: bool) -> (Primitive, Sc
             if let Primitive::Identifier(id) = results.first().unwrap() {
                 match new_scope.stdlib.get(id) {
                     Some(Primitive::Lambda(lambda)) => return (lambda(results[1..].to_vec()), new_scope),
-                    _ => return (Primitive::Tuple(results), new_scope)
+                    _ => return (last_result, new_scope)
                 }
             } else {
                 if results.len() == 1 {
                     return (results[0].clone(), new_scope)
                 } else {
-                    return (Primitive::Tuple(results), new_scope)
+                    return (last_result, new_scope)
                 }
             }
         },
@@ -68,7 +84,6 @@ pub fn interpret(input: ParseTree, scope: Scope, global: bool) -> (Primitive, Sc
 }
 
 fn define_constant(label: String, value: Primitive, mut scope: Scope) -> (Primitive, Scope) {
-    println!("define constant {}", label);
     scope.variables.insert(label.clone(), value);
     return (Primitive::Identifier(label), scope);
 }
@@ -94,4 +109,27 @@ fn apply(signature: Vec<ParseTree>, values: Vec<Primitive>, body: ParseTree, mut
     }
 
     return interpret(body, scope, false);
+}
+
+#[cfg(test)] 
+mod tests {
+    use super::interpret;
+    use super::super::parser::parse;
+    use super::super::env;
+    use super::super::types::*;
+
+    #[test]
+    fn test_case_analysis() {
+        let scope = env::standard_env();
+        let parse_tree = parse("
+            (define (abs x)
+                (cond ((> x 0) x)
+                      ((= x 0) 0)
+                      ((< x 0) (- x))))
+
+            (abs -5)");
+
+        let (result, _) = interpret(parse_tree, scope, true);
+        assert_eq!(result, Primitive::Integer(5));
+    }
 }
