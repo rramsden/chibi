@@ -34,7 +34,10 @@ pub fn interpret(input: ParseTree, scope: Scope, global: bool) -> (Primitive, Sc
                             let expression = &expressions[1];
                             let (result, _) = interpret(predicate.clone(), scope.clone(), false);
 
-                            if result == Primitive::Bool(true) {
+                            // evaluate if predicate is true or "else" is present
+                            // e.g. ((cond (else something))
+                            if result == Primitive::Bool(true) ||
+                               result == Primitive::Identifier(String::from("else")) {
                                 return interpret(expression.clone(), scope.clone(), false);
                             }
                         }
@@ -143,6 +146,18 @@ mod tests {
 
         let (result, _) = interpret(parse_tree, scope, true);
         assert_eq!(result, Primitive::Integer(5));
+    }
+
+    #[test]
+    fn test_else_case_analysis() {
+        let scope = env::standard_env();
+        let parse_tree = parse("
+            (cond (= 1 0)
+                  (else 123))
+        ");
+
+        let (result, _) = interpret(parse_tree, scope, true);
+        assert_eq!(result, Primitive::Integer(123));
     }
 
     #[test]
