@@ -52,7 +52,7 @@ pub fn interpret(input: ParseTree, scope: Scope, global: bool) -> (Primitive, Sc
                         }
                     }
 
-                    return (Primitive::Null, scope);
+                    return (Primitive::Nil, scope);
                 } else if leftmost == "cond" {
                     for clause in list[1..].into_iter() {
                         if let ParseTree::List(expressions) = clause {
@@ -68,7 +68,7 @@ pub fn interpret(input: ParseTree, scope: Scope, global: bool) -> (Primitive, Sc
                             }
                         }
                     }
-                    return (Primitive::Null, scope);
+                    return (Primitive::Nil, scope);
                 } else if let Some((signature, body)) = scope.clone().procedures.get(leftmost) {
                     let mut params: Vec<Primitive> = vec![];
 
@@ -155,7 +155,7 @@ fn apply(signature: Vec<ParseTree>, values: Vec<Primitive>, body: ParseTree, mut
 fn falsy(v: &Primitive) -> bool {
     v == &Primitive::Bool(false) ||
     v == &Primitive::Integer(0) ||
-    v == &Primitive::Null
+    v == &Primitive::Nil
 }
 
 fn truthy(v: &Primitive) -> bool {
@@ -198,7 +198,7 @@ mod tests {
         let scope = env::standard_env();
         let parse_tree = parse("(or)");
         let (result, _) = interpret(parse_tree, scope, true);
-        assert_eq!(result, Primitive::Null);
+        assert_eq!(result, Primitive::Nil);
     }
 
     #[test]
@@ -210,11 +210,11 @@ mod tests {
     }
 
     #[test]
-    fn test_case_or_return_null() {
+    fn test_case_or_return_nil() {
         let scope = env::standard_env();
         let parse_tree = parse("(or 0 0 0 0)");
         let (result, _) = interpret(parse_tree, scope, true);
-        assert_eq!(result, Primitive::Null);
+        assert_eq!(result, Primitive::Nil);
     }
 
     #[test]
@@ -249,7 +249,7 @@ mod tests {
         let scope = env::standard_env();
         let parse_tree = parse("(cond (= 1 2))");
         let (result, _) = interpret(parse_tree, scope, true);
-        assert_eq!(result, Primitive::Null);
+        assert_eq!(result, Primitive::Nil);
     }
 
     #[test]

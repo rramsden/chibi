@@ -29,7 +29,7 @@ pub fn standard_env() -> Scope {
 fn falsy(v: &Primitive) -> bool {
     v == &Primitive::Bool(false) ||
     v == &Primitive::Integer(0) ||
-    v == &Primitive::Null
+    v == &Primitive::Nil
 }
 
 fn truthy(v: &Primitive) -> bool {
