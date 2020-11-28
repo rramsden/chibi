@@ -3,13 +3,16 @@ mod types;
 mod parser;
 mod interpreter;
 
+use std::fs;
 use std::io::{self, Write, BufRead};
 use parser::parse;
 use interpreter::interpret;
 
 fn main() {
     // global lisp environment
-    let mut scope = env::standard_env();
+    let scope = env::standard_env();
+    let stdlib = require("./stdlib.chibi");
+    let (_, mut scope) = interpret(parse(&stdlib), scope, true);
 
     loop {
         print!("> ");
@@ -17,6 +20,13 @@ fn main() {
         let (result, result_scope) = interpret(parse(&expression), scope, true);
         scope = result_scope;
         println!("{:?}", result);
+    }
+}
+
+fn require(path: &str) -> String {
+    match fs::read_to_string(&path) {
+        Ok(string) => string,
+        _ => panic!("cannot read path")
     }
 }
 
