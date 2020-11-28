@@ -15,6 +15,18 @@ pub fn interpret(input: ParseTree, scope: Scope, global: bool) -> (Primitive, Sc
                     } else if let ParseTree::List(signature) = arguments {
                         return define_procedure(signature, body, scope);
                     }
+                } else if leftmost == "if" {
+                    let predicate = list[1].clone();
+                    let consequent = list[2].clone();
+                    let alternative = list[3].clone();
+
+                    let (result, _) = interpret(predicate.clone(), scope.clone(), false);
+
+                    if result == Primitive::Bool(true) {
+                        return interpret(consequent, scope.clone(), false);
+                    } else {
+                        return interpret(alternative, scope.clone(), false);
+                    }
                 } else if leftmost == "cond" {
                     for clause in list[1..].into_iter() {
                         if let ParseTree::List(expressions) = clause {
@@ -139,5 +151,20 @@ mod tests {
         let parse_tree = parse("(cond (= 1 2))");
         let (result, _) = interpret(parse_tree, scope, true);
         assert_eq!(result, Primitive::Null);
+    }
+
+    #[test]
+    fn test_if_statement() {
+        let scope = env::standard_env();
+        let parse_tree = parse("
+            (define (abs x)
+                (if (< x 0)
+                    (- x)
+                    x))
+            (abs -10)
+        ");
+
+        let (result, _) = interpret(parse_tree, scope, true);
+        assert_eq!(result, Primitive::Integer(10));
     }
 }
