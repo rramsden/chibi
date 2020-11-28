@@ -18,8 +18,6 @@ pub fn standard_env() -> Scope {
     stdlib.insert(">".to_string(), Primitive::Lambda(greater_than));
     stdlib.insert("<".to_string(), Primitive::Lambda(less_than));
     stdlib.insert("=".to_string(), Primitive::Lambda(equals));
-    stdlib.insert("and".to_string(), Primitive::Lambda(and));
-    stdlib.insert("or".to_string(), Primitive::Lambda(or));
     stdlib.insert("not".to_string(), Primitive::Lambda(not));
 
     let variables: HashMap<String, Primitive> = HashMap::new();
@@ -43,22 +41,6 @@ fn not(list: Vec<Primitive>) -> Primitive {
         return Primitive::Bool(false);
     } else {
         return Primitive::Bool(true);
-    }
-}
-
-fn and(list: Vec<Primitive>) -> Primitive {
-    if list.into_iter().all(|v| truthy(&v)) {
-        return Primitive::Bool(true);
-    } else {
-        return Primitive::Bool(false);
-    }
-}
-
-fn or(list: Vec<Primitive>) -> Primitive {
-    if list.into_iter().any(|v| truthy(&v)) {
-        return Primitive::Bool(true);
-    } else {
-        return Primitive::Bool(false);
     }
 }
 

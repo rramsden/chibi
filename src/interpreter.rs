@@ -27,6 +27,32 @@ pub fn interpret(input: ParseTree, scope: Scope, global: bool) -> (Primitive, Sc
                     } else {
                         return interpret(alternative, scope.clone(), false);
                     }
+                } else if leftmost == "and" {
+                    let mut last_result: Primitive = Primitive::Bool(true);
+
+                    for expression in list[1..].into_iter() {
+                        let (result, _) = interpret(expression.clone(), scope.clone(), false);
+                        last_result = result;
+
+                        if falsy(&last_result) {
+                            return (Primitive::Bool(false), scope);
+                        }
+                    }
+
+                    return (last_result, scope);
+                } else if leftmost == "or" {
+                    let mut last_result: Primitive;
+
+                    for expression in list[1..].into_iter() {
+                        let (result, _) = interpret(expression.clone(), scope.clone(), false);
+                        last_result = result;
+
+                        if truthy(&last_result) {
+                            return (last_result, scope);
+                        }
+                    }
+
+                    return (Primitive::Null, scope);
                 } else if leftmost == "cond" {
                     for clause in list[1..].into_iter() {
                         if let ParseTree::List(expressions) = clause {
@@ -126,12 +152,70 @@ fn apply(signature: Vec<ParseTree>, values: Vec<Primitive>, body: ParseTree, mut
     return interpret(body, scope, false);
 }
 
+fn falsy(v: &Primitive) -> bool {
+    v == &Primitive::Bool(false) ||
+    v == &Primitive::Integer(0) ||
+    v == &Primitive::Null
+}
+
+fn truthy(v: &Primitive) -> bool {
+    !falsy(v)
+}
+
 #[cfg(test)] 
 mod tests {
     use super::interpret;
     use super::super::parser::parse;
     use super::super::env;
     use super::super::types::*;
+
+    #[test]
+    fn test_case_and_empty() {
+        let scope = env::standard_env();
+        let parse_tree = parse("(and)");
+        let (result, _) = interpret(parse_tree, scope, true);
+        assert_eq!(result, Primitive::Bool(true));
+    }
+
+    #[test]
+    fn test_case_and_return_last_truthy() {
+        let scope = env::standard_env();
+        let parse_tree = parse("(and 1 2 3 \"Eureka\")");
+        let (result, _) = interpret(parse_tree, scope, true);
+        assert_eq!(result, Primitive::String(String::from("Eureka")));
+    }
+
+    #[test]
+    fn test_case_and_return_false() {
+        let scope = env::standard_env();
+        let parse_tree = parse("(and 1 2 3 4 0)");
+        let (result, _) = interpret(parse_tree, scope, true);
+        assert_eq!(result, Primitive::Bool(false));
+    }
+
+    #[test]
+    fn test_case_or_empty() {
+        let scope = env::standard_env();
+        let parse_tree = parse("(or)");
+        let (result, _) = interpret(parse_tree, scope, true);
+        assert_eq!(result, Primitive::Null);
+    }
+
+    #[test]
+    fn test_case_or_return_first_truthy() {
+        let scope = env::standard_env();
+        let parse_tree = parse("(or 0 0 1 0)");
+        let (result, _) = interpret(parse_tree, scope, true);
+        assert_eq!(result, Primitive::Integer(1));
+    }
+
+    #[test]
+    fn test_case_or_return_null() {
+        let scope = env::standard_env();
+        let parse_tree = parse("(or 0 0 0 0)");
+        let (result, _) = interpret(parse_tree, scope, true);
+        assert_eq!(result, Primitive::Null);
+    }
 
     #[test]
     fn test_case_analysis() {

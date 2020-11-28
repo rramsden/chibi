@@ -11,7 +11,7 @@ use interpreter::interpret;
 fn main() {
     // global lisp environment
     let scope = env::standard_env();
-    let stdlib = require("./stdlib.chibi");
+    let stdlib = require("./src/stdlib.chibi");
     let (_, mut scope) = interpret(parse(&stdlib), scope, true);
 
     loop {
