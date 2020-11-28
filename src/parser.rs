@@ -62,6 +62,10 @@ fn categorize(token: &String) -> ParseTree {
         }
     } else if first_ch == '"' && last_ch == '"' {
         value = Primitive::String(token[1..token.len() - 1].to_string());
+    } else if token == "true" {
+        value = Primitive::Bool(true);
+    } else if token == "false" {
+        value = Primitive::Bool(false);
     } else {
         value = Primitive::Identifier(token.to_string());
     };
@@ -101,5 +105,7 @@ mod tests {
         assert_eq!(parse("\"string\""), ParseTree::List(vec![ParseTree::Element(Primitive::String(String::from("string")))]));
         assert_eq!(parse("1.5"),        ParseTree::List(vec![ParseTree::Element(Primitive::Float(1.5))]));
         assert_eq!(parse("hello"),      ParseTree::List(vec![ParseTree::Element(Primitive::Identifier(String::from("hello")))]));
+        assert_eq!(parse("true"),       ParseTree::List(vec![ParseTree::Element(Primitive::Bool(true))]));
+        assert_eq!(parse("false"),       ParseTree::List(vec![ParseTree::Element(Primitive::Bool(false))]));
     }
 }
