@@ -102,17 +102,36 @@ fn addition(list: Vec<Primitive>) -> Primitive {
 }
 
 fn subtract(list: Vec<Primitive>) -> Primitive {
-    let mut has_float = false;
-    let result = list.iter().fold(0f64, |acc, x|
+    let mut is_float = false;
+
+    let leftmost = match list.first().unwrap() {
+        Primitive::Integer(n) => f64::from(*n),
+        Primitive::Float(n) => {
+            is_float = true;
+            *n
+        },
+        n => panic!("cant subtract {:?}", n)
+    };
+
+    if list.len() == 1 {
+        if is_float {
+            return Primitive::Float(-leftmost);
+        } else {
+            return Primitive::Integer(-(leftmost as i32));
+        }
+    }
+
+    let result = list[1..].iter().fold(leftmost, |acc, x|
               match x {
                   Primitive::Integer(n) => acc - f64::from(*n),
                   Primitive::Float(n) => {
-                      has_float = true;
+                      is_float = true;
                       acc - n
                   }
                   _ => panic!("cannot subtract {:?}", x)
               });
-    if has_float {
+
+    if is_float {
         Primitive::Float(result)
     } else {
         Primitive::Integer(result as i32)
@@ -134,5 +153,19 @@ fn multiply(list: Vec<Primitive>) -> Primitive {
         Primitive::Float(result)
     } else {
         Primitive::Integer(result as i32)
+    }
+}
+
+#[cfg(test)] 
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_subtract() {
+        let a = Primitive::Integer(9);
+        let b = Primitive::Integer(1);
+        let list = vec![a, b];
+
+        assert_eq!(subtract(list), Primitive::Integer(8));
     }
 }
