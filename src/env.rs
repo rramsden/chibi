@@ -15,6 +15,7 @@ pub fn standard_env() -> Scope {
     stdlib.insert("+".to_string(), Primitive::Lambda(addition));
     stdlib.insert("-".to_string(), Primitive::Lambda(subtract));
     stdlib.insert("*".to_string(), Primitive::Lambda(multiply));
+    stdlib.insert("/".to_string(), Primitive::Lambda(divide));
     stdlib.insert(">".to_string(), Primitive::Lambda(greater_than));
     stdlib.insert("<".to_string(), Primitive::Lambda(less_than));
     stdlib.insert("=".to_string(), Primitive::Lambda(equals));
@@ -101,6 +102,24 @@ fn addition(list: Vec<Primitive>) -> Primitive {
     }
 }
 
+fn divide(list: Vec<Primitive>) -> Primitive {
+    let leftmost = match list.first().unwrap() {
+        Primitive::Integer(n) => f64::from(*n),
+        Primitive::Float(n) => *n,
+        n => panic!("can't device {:?}", n)
+    };
+
+    let result = list[1..].iter().fold(leftmost, |acc, x|
+        match x {
+            Primitive::Integer(n) => acc / f64::from(*n),
+            Primitive::Float(n) => acc / n,
+            _ => panic!("cannot divide {:?}", x)
+        }
+    );
+
+    return Primitive::Float(result);
+}
+
 fn subtract(list: Vec<Primitive>) -> Primitive {
     let mut is_float = false;
 
@@ -167,5 +186,14 @@ mod tests {
         let list = vec![a, b];
 
         assert_eq!(subtract(list), Primitive::Integer(8));
+    }
+
+    #[test]
+    fn test_division() {
+        let a = Primitive::Integer(4);
+        let b = Primitive::Float(2.0);
+        let list = vec![a, b];
+
+        assert_eq!(divide(list), Primitive::Float(2.0));
     }
 }
