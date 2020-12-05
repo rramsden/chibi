@@ -97,7 +97,7 @@ pub fn interpret(input: ParseTree, scope: Scope, global: bool) -> (Primitive, Sc
             }
 
             if let Primitive::Identifier(id) = results.first().unwrap() {
-                match new_scope.stdlib.get(id) {
+                match new_scope.native_procedures.get(id) {
                     Some(Primitive::Lambda(lambda)) => return (lambda(results[1..].to_vec()), new_scope),
                     _ => return (last_result, new_scope)
                 }

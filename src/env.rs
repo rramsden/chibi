@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub struct Scope {
-    pub stdlib: HashMap<String, Primitive>,
+    pub native_procedures: HashMap<String, Primitive>,
     pub variables: HashMap<String, Primitive>,
 
     // label, (signature, body)
@@ -11,20 +11,20 @@ pub struct Scope {
 }
 
 pub fn standard_env() -> Scope {
-    let mut stdlib: HashMap<String, Primitive> = HashMap::new();
-    stdlib.insert("+".to_string(), Primitive::Lambda(addition));
-    stdlib.insert("-".to_string(), Primitive::Lambda(subtract));
-    stdlib.insert("*".to_string(), Primitive::Lambda(multiply));
-    stdlib.insert("/".to_string(), Primitive::Lambda(divide));
-    stdlib.insert(">".to_string(), Primitive::Lambda(greater_than));
-    stdlib.insert("<".to_string(), Primitive::Lambda(less_than));
-    stdlib.insert("=".to_string(), Primitive::Lambda(equals));
-    stdlib.insert("not".to_string(), Primitive::Lambda(not));
+    let mut native_procedures: HashMap<String, Primitive> = HashMap::new();
+    native_procedures.insert("+".to_string(), Primitive::Lambda(addition));
+    native_procedures.insert("-".to_string(), Primitive::Lambda(subtract));
+    native_procedures.insert("*".to_string(), Primitive::Lambda(multiply));
+    native_procedures.insert("/".to_string(), Primitive::Lambda(divide));
+    native_procedures.insert(">".to_string(), Primitive::Lambda(greater_than));
+    native_procedures.insert("<".to_string(), Primitive::Lambda(less_than));
+    native_procedures.insert("=".to_string(), Primitive::Lambda(equals));
+    native_procedures.insert("not".to_string(), Primitive::Lambda(not));
 
     let variables: HashMap<String, Primitive> = HashMap::new();
     let procedures: HashMap<String, (Vec<ParseTree>, ParseTree)> = HashMap::new();
 
-    Scope { stdlib, variables, procedures }
+    Scope { native_procedures, variables, procedures }
 }
 
 fn falsy(v: &Primitive) -> bool {
