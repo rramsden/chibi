@@ -46,12 +46,24 @@ fn greater_than(list: Vec<Primitive>) -> Primitive {
     let right = &list[1];
 
     if let Primitive::Integer(a1) = left {
+        if let Primitive::Float(a2) = right {
+            return Primitive::Bool(f64::from(*a1) == *a2)
+        }
         if let Primitive::Integer(a2) = right {
             return Primitive::Bool(a1 > a2);
         }
     }
 
-    return Primitive::Bool(false);
+    if let Primitive::Float(a1) = left {
+        if let Primitive::Integer(a2) = right {
+            return Primitive::Bool(*a1 == f64::from(*a2))
+        }
+        if let Primitive::Float(a2) = right {
+            return Primitive::Bool(a1 > a2);
+        }
+    }
+
+    panic!("cannot compare {:?} and {:?}", left, right);
 }
 
 fn equals(list: Vec<Primitive>) -> Primitive {
@@ -59,12 +71,24 @@ fn equals(list: Vec<Primitive>) -> Primitive {
     let right = &list[1];
 
     if let Primitive::Integer(a1) = left {
+        if let Primitive::Float(a2) = right {
+            return Primitive::Bool(f64::from(*a1) == *a2)
+        }
         if let Primitive::Integer(a2) = right {
             return Primitive::Bool(a1 == a2);
         }
     }
 
-    return Primitive::Bool(false);
+    if let Primitive::Float(a1) = left {
+        if let Primitive::Integer(a2) = right {
+            return Primitive::Bool(*a1 == f64::from(*a2))
+        }
+        if let Primitive::Float(a2) = right {
+            return Primitive::Bool(a1 == a2);
+        }
+    }
+
+    panic!("cannot compare {:?} and {:?}", left, right);
 }
 
 fn less_than(list: Vec<Primitive>) -> Primitive {
@@ -75,9 +99,21 @@ fn less_than(list: Vec<Primitive>) -> Primitive {
         if let Primitive::Integer(a2) = right {
             return Primitive::Bool(a1 < a2);
         }
+        if let Primitive::Float(a2) = right {
+            return Primitive::Bool(f64::from(*a1) < *a2);
+        }
     }
 
-    return Primitive::Bool(false);
+    if let Primitive::Float(a1) = left {
+        if let Primitive::Integer(a2) = right {
+            return Primitive::Bool(*a1 < f64::from(*a2));
+        }
+        if let Primitive::Float(a2) = right {
+            return Primitive::Bool(a1 < a2);
+        }
+    }
+
+    panic!("cannot compare {:?} and {:?}", left, right);
 }
 
 fn addition(list: Vec<Primitive>) -> Primitive {

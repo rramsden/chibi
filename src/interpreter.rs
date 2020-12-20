@@ -1,5 +1,6 @@
 use super::types::*;
 use super::env::Scope;
+use std::process;
 
 pub fn interpret(input: ParseTree, scope: Scope, global: bool) -> (Primitive, Scope) {
     match input {
@@ -7,6 +8,11 @@ pub fn interpret(input: ParseTree, scope: Scope, global: bool) -> (Primitive, Sc
             if let ParseTree::Element(Primitive::Identifier(leftmost)) = &list[0] {
                 if leftmost == "binding" {
                     println!("{:?}", scope);
+                } else if leftmost == "print" {
+                    let (result, _) = interpret(list[1].clone(), scope.clone(), false);
+                    println!("{:?}", result);
+                } else if leftmost == "quit" {
+                    process::exit(0x00);
                 } else if leftmost == "define" && list.len() == 3 {
                     let arguments = list[1].clone();
                     let body = list[2].clone();
@@ -82,7 +88,7 @@ pub fn interpret(input: ParseTree, scope: Scope, global: bool) -> (Primitive, Sc
                     }
                     return (Primitive::Nil, scope);
                 } else if let Some(Primitive::Lambda(arguments, body)) = scope.clone().variables.get(leftmost) {
-                    let (params, scope) = flatten_tree(list[1..].to_vec(), scope);
+                    let (params, _) = flatten_tree(list[1..].to_vec(), scope.clone());
 
                     let body: ParseTree = *(body.clone());
                     return apply(arguments.to_vec(), params, body.clone(), scope.clone());
@@ -175,14 +181,16 @@ fn define_procedure(signature: Vec<ParseTree>, body: ParseTree, scope: Scope) ->
     }
 }
 
-fn apply(arguments: Vec<Primitive>, values: Vec<Primitive>, body: ParseTree, mut scope: Scope) -> (Primitive, Scope) {
+fn apply(arguments: Vec<Primitive>, values: Vec<Primitive>, body: ParseTree, scope: Scope) -> (Primitive, Scope) {
+    let mut local_scope = scope.clone();
+
     for (i, id) in arguments.into_iter().enumerate() {
         if let Primitive::Identifier(varname) = id {
-            scope.variables.insert(varname, values[i].clone());
+            local_scope.variables.insert(varname, values[i].clone());
         }
     }
 
-    let (result, _) = interpret(body, scope.clone(), false);
+    let (result, _) = interpret(body, local_scope, false);
     
     return (result, scope);
 }
@@ -328,5 +336,18 @@ mod tests {
 
         let (result, _) = interpret(parse_tree, scope, true);
         assert_eq!(result, Primitive::Integer(4));
+    }
+
+    #[test]
+    fn scope_local_and_global_test() {
+        let scope = env::standard_env();
+        let parse_tree = parse("
+            (define (foo x) x)
+            (define (bar x) ((foo 1) x))
+            (bar 5)
+        ");
+
+        let (result, _) = interpret(parse_tree, scope, true);
+        assert_eq!(result, Primitive::Integer(5));
     }
 }
