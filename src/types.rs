@@ -25,7 +25,8 @@ pub enum Primitive {
     Bool(bool),
     Tuple(Vec<Primitive>),
     Nil,
-    Lambda(Lambda)
+    Function(Function),
+    Lambda(Vec<Primitive>, Box<ParseTree>)
 }
 
 impl fmt::Debug for Primitive {
@@ -48,12 +49,13 @@ impl fmt::Debug for Primitive {
                 }
                 write!(f, "Tuple({})", out)
             },
-            Primitive::Lambda(_) => write!(f, "Lambda")
+            Primitive::Function(_) => write!(f, "Function"),
+            Primitive::Lambda(arguments, _) => write!(f, "Lambda({:?})", arguments)
         }
     }
 }
 
-type Lambda = fn(Vec<Primitive>) -> Primitive;
+type Function = fn(Vec<Primitive>) -> Primitive;
 
 impl fmt::Debug for ParseTree {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
