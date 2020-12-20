@@ -92,6 +92,16 @@ pub fn interpret(input: ParseTree, scope: Scope, global: bool) -> (Primitive, Sc
 
                     let body: ParseTree = *(body.clone());
                     return apply(arguments.to_vec(), params, body.clone(), scope.clone());
+                } else if global == false {
+                    match scope.native_procedures.get(leftmost) {
+                        Some(Primitive::Function(function)) => {
+                            let (results, new_scope) = flatten_tree(list[1..].to_vec(), scope.clone());
+                            return (function(results.to_vec()), new_scope)
+                        },
+                        _ => {
+                            return (Primitive::String(String::from(format!("undefined procedure {:?}", leftmost))), scope);
+                        }
+                    }
                 }
             }
 
@@ -349,5 +359,14 @@ mod tests {
 
         let (result, _) = interpret(parse_tree, scope, true);
         assert_eq!(result, Primitive::Integer(5));
+    }
+
+    #[test]
+    fn error_on_undefined_procedure() {
+        let scope = env::standard_env();
+        let parse_tree = parse("(foobar 5)");
+
+        let (result, _) = interpret(parse_tree, scope, true);
+        assert_eq!(result, Primitive::String(String::from("undefined procedure \"foobar\"")));
     }
 }
