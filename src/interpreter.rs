@@ -124,19 +124,10 @@ pub fn interpret(input: ParseTree, scope: Scope, global: bool) -> (Primitive, Sc
                 new_scope = scope;
             }
 
-            if let Primitive::Identifier(id) = results.first().unwrap() {
-                match new_scope.native_procedures.get(id) {
-                    Some(Primitive::Function(function)) => return (function(results[1..].to_vec()), new_scope),
-                    _ => {
-                        return(last_result, new_scope)
-                    }
-                }
+            if results.len() == 1 {
+                return (results[0].clone(), new_scope)
             } else {
-                if results.len() == 1 {
-                    return (results[0].clone(), new_scope)
-                } else {
-                    return (last_result, new_scope)
-                }
+                return (last_result, new_scope)
             }
         },
         ParseTree::List(_) => (Primitive::Tuple(vec![]), scope), // empty case
