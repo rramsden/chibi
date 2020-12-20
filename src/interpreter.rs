@@ -84,17 +84,18 @@ pub fn interpret(input: ParseTree, scope: Scope, global: bool) -> (Primitive, Sc
                 } else if let Some(Primitive::Lambda(arguments, body)) = scope.clone().variables.get(leftmost) {
                     let (params, scope) = flatten_tree(list[1..].to_vec(), scope);
 
-                    let body: ParseTree = unbox(body.clone());
+                    let body: ParseTree = *(body.clone());
                     return apply(arguments.to_vec(), params, body.clone(), scope.clone());
                 }
             }
 
             let (results, mut new_scope) = flatten_tree(list, scope.clone());
 
-            // if the leftmost primitive is a lambda and foll
+            // if the leftmost primitive is a lambda then execute the rest of the list using the
+            // lambda function.
             if let Primitive::Lambda(arguments, body) = results.first().unwrap().clone() {
                 let params = results[1..].to_vec();
-                let body: ParseTree = unbox(body);
+                let body: ParseTree = *body;
 
                 if params.len() > 0 {
                     return apply(arguments, params, body, new_scope);
@@ -135,10 +136,6 @@ pub fn interpret(input: ParseTree, scope: Scope, global: bool) -> (Primitive, Sc
             }
         }
     }
-}
-
-fn unbox<T>(value: Box<T>) -> T {
-    *value
 }
 
 fn flatten_tree(list: Vec<ParseTree>, scope: Scope) -> (Vec<Primitive>, Scope) {
