@@ -23,7 +23,6 @@ pub enum Primitive {
     Integer(i32),
     Float(f64),
     Bool(bool),
-    Tuple(Vec<Primitive>),
     Nil,
     Function(Function),
     Lambda(Vec<Primitive>, Box<ParseTree>)
@@ -38,17 +37,6 @@ impl fmt::Debug for Primitive {
             Primitive::Float(i) => write!(f, "Float({})", i),
             Primitive::Bool(i) => write!(f, "Bool({})", i),
             Primitive::Nil => write!(f, "Nil"),
-            Primitive::Tuple(vec) => {
-                let mut out = String::from("");
-                for (pos, p) in vec.iter().enumerate() {
-                    if pos == vec.len() - 1 {
-                        out.push_str(&format!("{:?}", p));
-                    } else {
-                        out.push_str(&format!("{:?}, ", p));
-                    }
-                }
-                write!(f, "Tuple({})", out)
-            },
             Primitive::Function(_) => write!(f, "Function"),
             Primitive::Lambda(arguments, _) => write!(f, "Lambda({:?})", arguments)
         }

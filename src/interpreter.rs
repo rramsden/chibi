@@ -13,9 +13,21 @@ pub fn interpret(input: ParseTree, scope: Scope, global: bool) -> (Primitive, Sc
                     println!("{:?}", result);
                 } else if leftmost == "quit" {
                     process::exit(0x00);
-                } else if leftmost == "define" && list.len() == 3 {
+                } else if leftmost == "define" {
                     let arguments = list[1].clone();
-                    let body = list[2].clone();
+                    let body;
+
+                    // Special form to handle:
+                    //
+                    //  (define (foo x)
+                    //    (define result (* x x))
+                    //    result
+                    //
+                    if list[2..].len() > 1 {
+                        body = ParseTree::List(list[2..].to_vec());
+                    } else {
+                        body = list[2].clone();
+                    }
 
                     if let ParseTree::Element(Primitive::Identifier(id)) = arguments { // (define x 2)
                         let (result, new_scope) = interpret(body, scope, false);
@@ -26,7 +38,19 @@ pub fn interpret(input: ParseTree, scope: Scope, global: bool) -> (Primitive, Sc
                 } else if leftmost == "lambda" {
                     // We need an object that can hold the contents of lambda
                     let arguments = list[1].clone();
-                    let body = list[2].clone();
+                    let body;
+
+                    // Special form to handle:
+                    //
+                    //  ((lambda (x)
+                    //    (define square (* x x))
+                    //    (square x)) 2)
+                    //
+                    if list[2..].len() > 1 {
+                        body = ParseTree::List(list[2..].to_vec());
+                    } else {
+                        body = list[2].clone();
+                    }
 
                     if let ParseTree::List(signature) = arguments { // (define (x) (* x x))
                         return (define_lambda(signature, body, scope.clone()), scope);
@@ -130,7 +154,7 @@ pub fn interpret(input: ParseTree, scope: Scope, global: bool) -> (Primitive, Sc
                 return (last_result, new_scope)
             }
         },
-        ParseTree::List(_) => (Primitive::Tuple(vec![]), scope), // empty case
+        ParseTree::List(_) => (Primitive::Nil, scope), // empty case
         ParseTree::Element(primitive) => {
             match primitive {
                 Primitive::Identifier(id) => {
@@ -359,5 +383,22 @@ mod tests {
 
         let (result, _) = interpret(parse_tree, scope, true);
         assert_eq!(result, Primitive::String(String::from("undefined procedure \"foobar\"")));
+    }
+
+    #[test]
+    fn nested_define() {
+        let scope = env::standard_env();
+        let parse_tree = parse("
+            (define (square x)
+              (define (_square y) (* y y))
+              (_square x))
+
+            ((lambda (x)
+              (define _square_of_x (square x))
+              (square _square_of_x)) 2)
+        ");
+    
+        let (result, _) = interpret(parse_tree, scope, true);
+        assert_eq!(result, Primitive::Integer(16));
     }
 }
